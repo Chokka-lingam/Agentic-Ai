@@ -36,3 +36,27 @@ export type TravelResponse = {
   travel_tips: string[];
   safety_notes: string[];
 };
+
+export type StoredItinerary = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  input: TravelRequest;
+  plan: TravelResponse;
+};
+
+export type ItineraryListItem = {
+  id: string;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  travelType: TravelType;
+  totalEstimatedBudget: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TravelPlanApiResponse = TravelResponse & {
+  itinerary_id: string;
+  request_id: string;
+};

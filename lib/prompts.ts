@@ -15,13 +15,24 @@ Rules:
 `;
 
 export function buildTravelUserPrompt(input: TravelRequest): string {
+  const start = new Date(`${input.startDate}T00:00:00.000Z`);
+  const end = new Date(`${input.endDate}T00:00:00.000Z`);
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const tripLengthDays = Math.floor((end.getTime() - start.getTime()) / msPerDay) + 1;
+
   return `Create a travel plan based on:
 - Destination: ${input.destination}
 - Start date: ${input.startDate}
 - End date: ${input.endDate}
+- Trip length in days: ${tripLengthDays}
 - Budget range: ${input.budgetRange}
 - Travel type: ${input.travelType}
 - Interests: ${input.interests.join(", ")}
+
+Hard constraints:
+- "daily_plan" must include exactly ${tripLengthDays} day entries.
+- Day numbers must be sequential starting at 1.
+- "date" values must be sequential calendar dates from ${input.startDate} through ${input.endDate}.
 
 Return strict JSON in this exact shape:
 {

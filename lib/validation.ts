@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const MAX_TRIP_DAYS = 30;
+
 export const TravelRequestSchema = z.object({
   destination: z.string().min(2).max(120),
   startDate: z.string().date(),
@@ -7,6 +9,28 @@ export const TravelRequestSchema = z.object({
   budgetRange: z.string().min(2).max(120),
   travelType: z.enum(["solo", "couple", "family", "friends"]),
   interests: z.array(z.string().min(2).max(50)).min(1).max(10),
+}).superRefine((value, ctx) => {
+  const start = new Date(`${value.startDate}T00:00:00.000Z`);
+  const end = new Date(`${value.endDate}T00:00:00.000Z`);
+
+  if (end < start) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["endDate"],
+      message: "End date must be on or after the start date.",
+    });
+    return;
+  }
+
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const spanDays = Math.floor((end.getTime() - start.getTime()) / msPerDay) + 1;
+  if (spanDays > MAX_TRIP_DAYS) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["endDate"],
+      message: `Trip duration cannot exceed ${MAX_TRIP_DAYS} days.`,
+    });
+  }
 });
 
 export const TravelResponseSchema = z.object({

@@ -1,63 +1,93 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
-import { buildTravelUserPrompt, TRAVEL_SYSTEM_PROMPT } from "@/lib/prompts";
-import { TravelRequestSchema, TravelResponseSchema } from "@/lib/validation";
+import { createItinerary } from "@/lib/itinerary-store";
+import { logError, logInfo, newRequestId } from "@/lib/observability";
+import { generateTravelPlanWithLLM } from "@/lib/travel-plan-service";
+import { TravelRequestSchema } from "@/lib/validation";
 
 const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 const apiKey = process.env.OPENAI_API_KEY;
+const timeoutMs = Number(process.env.OPENAI_TIMEOUT_MS || 20000);
+const maxRetries = Number(process.env.OPENAI_MAX_RETRIES || 2);
 
 const client = apiKey ? new OpenAI({ apiKey }) : null;
 
 export async function POST(request: Request) {
+  const requestId = newRequestId();
+  const start = Date.now();
+
   try {
     if (!client) {
-      return NextResponse.json(
+      logError("travel_plan_missing_api_key", { requestId });
+      const response = NextResponse.json(
         { error: "Server is missing OPENAI_API_KEY. Add it in your environment variables." },
         { status: 500 },
       );
+      response.headers.set("x-request-id", requestId);
+      return response;
     }
 
     const body = await request.json();
     const parsedInput = TravelRequestSchema.safeParse(body);
 
     if (!parsedInput.success) {
-      return NextResponse.json(
+      logInfo("travel_plan_invalid_request", {
+        requestId,
+        issues: parsedInput.error.flatten(),
+      });
+      const response = NextResponse.json(
         { error: "Invalid request payload.", issues: parsedInput.error.flatten() },
         { status: 400 },
       );
+      response.headers.set("x-request-id", requestId);
+      return response;
     }
 
-    const completion = await client.chat.completions.create({
+    logInfo("travel_plan_request_started", {
+      requestId,
       model,
-      temperature: 0.4,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: TRAVEL_SYSTEM_PROMPT },
-        { role: "user", content: buildTravelUserPrompt(parsedInput.data) },
-      ],
+      destination: parsedInput.data.destination,
+      startDate: parsedInput.data.startDate,
+      endDate: parsedInput.data.endDate,
+      travelType: parsedInput.data.travelType,
+      interestsCount: parsedInput.data.interests.length,
     });
 
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      return NextResponse.json(
-        { error: "No itinerary generated. Please try again." },
-        { status: 502 },
-      );
-    }
+    const generated = await generateTravelPlanWithLLM(client, parsedInput.data, {
+      model,
+      retries: maxRetries,
+      timeoutMs,
+    });
+    const saved = await createItinerary(parsedInput.data, generated.plan);
+    const durationMs = Date.now() - start;
 
-    const rawJson = JSON.parse(content);
-    const parsedOutput = TravelResponseSchema.safeParse(rawJson);
+    logInfo("travel_plan_request_succeeded", {
+      requestId,
+      itineraryId: saved.id,
+      durationMs,
+      attempts: generated.attempts,
+      usage: generated.usage,
+    });
 
-    if (!parsedOutput.success) {
-      return NextResponse.json(
-        { error: "AI response format validation failed.", issues: parsedOutput.error.flatten() },
-        { status: 502 },
-      );
-    }
-
-    return NextResponse.json(parsedOutput.data);
+    const response = NextResponse.json({
+      ...generated.plan,
+      itinerary_id: saved.id,
+      request_id: requestId,
+    });
+    response.headers.set("x-request-id", requestId);
+    return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown server error";
-    return NextResponse.json({ error: `Failed to generate itinerary: ${message}` }, { status: 500 });
+    logError("travel_plan_request_failed", {
+      requestId,
+      durationMs: Date.now() - start,
+      error: message,
+    });
+    const response = NextResponse.json(
+      { error: `Failed to generate itinerary: ${message}`, request_id: requestId },
+      { status: 500 },
+    );
+    response.headers.set("x-request-id", requestId);
+    return response;
   }
 }
