@@ -7,7 +7,11 @@ A production-ready, modular AI Travel Guide app built with **Next.js App Router*
 - Destination, dates, budget, travel type, and interests form
 - Client-side validation and error messages
 - AI itinerary generation via secure backend route handler
-- Structured JSON output parsing + schema validation
+- Structured output with JSON schema enforcement
+- Server-side date-span validation for `daily_plan`
+- Timeout + retry/backoff around model calls
+- Request observability with request IDs + usage/latency logging
+- File-backed itinerary persistence with history/edit APIs
 - Day-by-day plan with activities, food, transport, and cost
 - Hotel suggestions, food spots, packing list, tips, and safety notes
 - Ready for Vercel deployment
@@ -54,6 +58,8 @@ A production-ready, modular AI Travel Guide app built with **Next.js App Router*
    ```env
    OPENAI_API_KEY=your_openai_api_key_here
    OPENAI_MODEL=gpt-4.1-mini
+   OPENAI_TIMEOUT_MS=20000
+   OPENAI_MAX_RETRIES=2
    ```
 4. Run development server:
    ```bash
@@ -106,7 +112,44 @@ Response shape:
   "total_estimated_budget": "",
   "packing_list": [],
   "travel_tips": [],
-  "safety_notes": []
+  "safety_notes": [],
+  "itinerary_id": "uuid",
+  "request_id": "uuid"
+}
+```
+
+### `GET /api/itineraries`
+
+Returns saved itinerary history (latest first).
+
+### `GET /api/itineraries/:id`
+
+Returns a saved itinerary (input + plan + metadata).
+
+### `PUT /api/itineraries/:id`
+
+Request body:
+
+```json
+{
+  "plan": {
+    "summary": "",
+    "daily_plan": [],
+    "hotel_recommendations": [],
+    "local_food_spots": [],
+    "transportation_overview": [],
+    "cost_breakdown": {
+      "accommodation": "",
+      "food": "",
+      "transport": "",
+      "activities": "",
+      "misc": ""
+    },
+    "total_estimated_budget": "",
+    "packing_list": [],
+    "travel_tips": [],
+    "safety_notes": []
+  }
 }
 ```
 
@@ -132,6 +175,7 @@ Response shape:
 ```bash
 npm run lint
 npm run typecheck
+npm run test
 npm run build
 npm run start
 ```

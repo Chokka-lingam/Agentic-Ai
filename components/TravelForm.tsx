@@ -1,7 +1,13 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import type { TravelRequest, TravelResponse, TravelType } from "@/lib/types";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import type {
+  ItineraryListItem,
+  TravelPlanApiResponse,
+  TravelRequest,
+  TravelResponse,
+  TravelType,
+} from "@/lib/types";
 
 const interestOptions = ["adventure", "food", "history", "nightlife", "nature", "culture", "shopping"];
 
@@ -31,12 +37,21 @@ function validate(form: TravelRequest): FormErrors {
 
 export default function TravelForm() {
   const [form, setForm] = useState<TravelRequest>(initialForm);
-  const [result, setResult] = useState<TravelResponse | null>(null);
+  const [result, setResult] = useState<TravelPlanApiResponse | null>(null);
+  const [history, setHistory] = useState<ItineraryListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [isSavingEdits, setIsSavingEdits] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [editSummary, setEditSummary] = useState("");
+  const [editBudget, setEditBudget] = useState("");
 
   const canSubmit = useMemo(() => !isLoading, [isLoading]);
+
+  useEffect(() => {
+    void loadHistory();
+  }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,12 +69,16 @@ export default function TravelForm() {
         body: JSON.stringify(form),
       });
 
-      const payload = (await response.json()) as TravelResponse | { error?: string };
+      const payload = (await response.json()) as TravelPlanApiResponse | { error?: string };
       if (!response.ok) {
         throw new Error((payload as { error?: string }).error || "Request failed");
       }
 
-      setResult(payload as TravelResponse);
+      const nextResult = payload as TravelPlanApiResponse;
+      setResult(nextResult);
+      setEditSummary(nextResult.summary);
+      setEditBudget(nextResult.total_estimated_budget);
+      await loadHistory();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error occurred");
     } finally {
@@ -74,6 +93,87 @@ export default function TravelForm() {
         ? current.interests.filter((interest) => interest !== value)
         : [...current.interests, value],
     }));
+  }
+
+  async function loadHistory() {
+    setIsHistoryLoading(true);
+    try {
+      const response = await fetch("/api/itineraries", { cache: "no-store" });
+      const payload = (await response.json()) as { itineraries?: ItineraryListItem[]; error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to load history");
+      }
+      setHistory(payload.itineraries ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load history");
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  }
+
+  async function loadItineraryById(id: string) {
+    setError(null);
+    try {
+      const response = await fetch(`/api/itineraries/${id}`, { cache: "no-store" });
+      const payload = (await response.json()) as {
+        itinerary?: { id: string; input: TravelRequest; plan: TravelResponse };
+        error?: string;
+      };
+      if (!response.ok || !payload.itinerary) {
+        throw new Error(payload.error || "Failed to load itinerary");
+      }
+
+      const nextResult: TravelPlanApiResponse = {
+        ...payload.itinerary.plan,
+        itinerary_id: payload.itinerary.id,
+        request_id: "history-load",
+      };
+      setResult(nextResult);
+      setForm(payload.itinerary.input);
+      setEditSummary(nextResult.summary);
+      setEditBudget(nextResult.total_estimated_budget);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load itinerary");
+    }
+  }
+
+  async function saveEdits() {
+    if (!result?.itinerary_id) return;
+
+    setIsSavingEdits(true);
+    setError(null);
+    try {
+      const planPayload: TravelResponse = {
+        ...result,
+        summary: editSummary,
+        total_estimated_budget: editBudget,
+      };
+
+      const response = await fetch(`/api/itineraries/${result.itinerary_id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planPayload }),
+      });
+      const payload = (await response.json()) as {
+        itinerary?: { id: string; plan: TravelResponse };
+        error?: string;
+      };
+      if (!response.ok || !payload.itinerary) {
+        throw new Error(payload.error || "Failed to save edits");
+      }
+
+      const updatedResult: TravelPlanApiResponse = {
+        ...payload.itinerary.plan,
+        itinerary_id: payload.itinerary.id,
+        request_id: result.request_id,
+      };
+      setResult(updatedResult);
+      await loadHistory();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save edits");
+    } finally {
+      setIsSavingEdits(false);
+    }
   }
 
   return (
@@ -170,6 +270,39 @@ export default function TravelForm() {
         </button>
 
         {error && <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+
+        <div className="mt-6 border-t border-slate-200 pt-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-sm font-semibold">Saved itineraries</h3>
+            <button
+              type="button"
+              onClick={() => void loadHistory()}
+              className="text-xs font-medium text-brand-700 underline"
+            >
+              Refresh
+            </button>
+          </div>
+          <div className="max-h-56 space-y-2 overflow-auto">
+            {isHistoryLoading && <p className="text-xs text-slate-500">Loading history...</p>}
+            {!isHistoryLoading && history.length === 0 && (
+              <p className="text-xs text-slate-500">No itineraries saved yet.</p>
+            )}
+            {history.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`w-full rounded-md border p-2 text-left text-xs ${
+                  result?.itinerary_id === item.id ? "border-brand-500 bg-brand-50" : "border-slate-200"
+                }`}
+                onClick={() => void loadItineraryById(item.id)}
+              >
+                <p className="font-semibold">{item.destination}</p>
+                <p className="text-slate-600">{item.startDate} to {item.endDate}</p>
+                <p className="text-slate-600">{item.totalEstimatedBudget}</p>
+              </button>
+            ))}
+          </div>
+        </div>
       </form>
 
       <section className="card min-h-[420px]">
@@ -189,7 +322,7 @@ export default function TravelForm() {
               <div className="mt-3 space-y-3">
                 {result.daily_plan.map((day) => (
                   <div key={`${day.day}-${day.date}`} className="rounded-xl border border-slate-200 p-4">
-                    <p className="font-semibold">Day {day.day} • {day.date}</p>
+                    <p className="font-semibold">Day {day.day} - {day.date}</p>
                     <p className="mt-2 text-sm"><strong>Activities:</strong> {day.activities.join(", ")}</p>
                     <p className="mt-1 text-sm"><strong>Food:</strong> {day.food.join(", ")}</p>
                     <p className="mt-1 text-sm"><strong>Transport:</strong> {day.transport}</p>
@@ -219,6 +352,34 @@ export default function TravelForm() {
               </ul>
               <p className="mt-2 font-semibold">Total Estimated Budget: {result.total_estimated_budget}</p>
             </div>
+
+            {result.itinerary_id && (
+              <div className="rounded-xl border border-slate-200 p-4">
+                <h4 className="text-lg font-semibold">Edit saved itinerary</h4>
+                <label className="label mt-3" htmlFor="editSummary">Summary</label>
+                <textarea
+                  id="editSummary"
+                  className="input min-h-28"
+                  value={editSummary}
+                  onChange={(event) => setEditSummary(event.target.value)}
+                />
+                <label className="label mt-3" htmlFor="editBudget">Total budget</label>
+                <input
+                  id="editBudget"
+                  className="input"
+                  value={editBudget}
+                  onChange={(event) => setEditBudget(event.target.value)}
+                />
+                <button
+                  type="button"
+                  className="mt-3 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-70"
+                  onClick={() => void saveEdits()}
+                  disabled={isSavingEdits}
+                >
+                  {isSavingEdits ? "Saving..." : "Save edits"}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </section>
