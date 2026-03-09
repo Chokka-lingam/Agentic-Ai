@@ -1,4 +1,4 @@
-import TravelForm from "@/components/TravelForm";
+import TravelTabs from "@/components/TravelTabs";
 
 export default function HomePage() {
   return (
@@ -12,7 +12,7 @@ export default function HomePage() {
         </p>
         <p className="mt-1 text-sm text-slate-500">For reliability, each request supports up to 14 trip days.</p>
       </header>
-      <TravelForm />
+      <TravelTabs />
     </main>
   );
 }
