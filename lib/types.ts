@@ -36,6 +36,7 @@ export type DailyPlan = {
 
 export type TravelResponse = {
   summary: string;
+  map_locations: string[];
   daily_plan: DailyPlan[];
   hotel_recommendations: string[];
   local_food_spots: string[];
@@ -67,5 +68,5 @@ export type GeocodeLocation = {
 };
 
 export type GeocodeResponse = {
-  location: GeocodeLocation;
+  locations: GeocodeLocation[];
 };

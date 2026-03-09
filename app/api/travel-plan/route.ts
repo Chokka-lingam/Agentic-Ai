@@ -13,6 +13,7 @@ import type { PlannerResponse, TravelRequest, TravelResponse } from "@/lib/types
 
 const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 const apiKey = process.env.OPENAI_API_KEY;
+
 const client = apiKey ? new OpenAI({ apiKey }) : null;
 
 const REQUEST_TIMEOUT_MS = 25_000;
@@ -40,12 +41,17 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   });
 }
 
-async function generateWithRetry(payload: OpenAI.Chat.Completions.ChatCompletionCreateParams) {
+async function generateWithRetry(
+  payload: OpenAI.Chat.Completions.ChatCompletionCreateParams,
+): Promise<OpenAI.Chat.Completions.ChatCompletion> {
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= MAX_LLM_ATTEMPTS; attempt += 1) {
     try {
-      return await withTimeout(client!.chat.completions.create(payload), REQUEST_TIMEOUT_MS);
+      return (await withTimeout(
+        client!.chat.completions.create(payload),
+        REQUEST_TIMEOUT_MS,
+      )) as OpenAI.Chat.Completions.ChatCompletion;
     } catch (error) {
       lastError = error;
     }
@@ -84,6 +90,7 @@ async function plan_tasks(input: TravelRequest): Promise<{ ok: true; value: Plan
   try {
     const completion = await generateWithRetry({
       model,
+      stream: false,
       temperature: 0.2,
       response_format: { type: "json_object" },
       messages: [
@@ -148,6 +155,7 @@ async function synthesize_itinerary(
   try {
     const completion = await generateWithRetry({
       model,
+      stream: false,
       temperature: 0.3,
       response_format: { type: "json_object" },
       messages: [
