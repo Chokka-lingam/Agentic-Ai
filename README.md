@@ -5,15 +5,15 @@ A production-ready, modular AI Travel Guide app built with **Next.js App Router*
 ## Features
 
 - Destination, dates, budget, travel type, and interests form
-- Client-side validation and error messages
+- Client-side validation and inline error messages
+- Trip-length guardrail (max 14 days per request)
 - AI itinerary generation via secure backend route handler
-- Structured output with JSON schema enforcement
-- Server-side date-span validation for `daily_plan`
-- Timeout + retry/backoff around model calls
-- Request observability with request IDs + usage/latency logging
-- File-backed itinerary persistence with history/edit APIs
+- Structured JSON output parsing + schema validation
+- Retry + timeout logic for LLM calls
+- Two-phase AI pipeline: planner tasks -> itinerary synthesis
 - Day-by-day plan with activities, food, transport, and cost
-- Hotel suggestions, food spots, packing list, tips, and safety notes
+- Hotel suggestions, food spots, packing list, travel tips, and safety notes
+- Request ID surfaced for troubleshooting API failures
 - Ready for Vercel deployment
 
 ## Folder Structure
@@ -30,6 +30,7 @@ A production-ready, modular AI Travel Guide app built with **Next.js App Router*
 ├── components
 │   └── TravelForm.tsx
 ├── lib
+│   ├── date.ts
 │   ├── prompts.ts
 │   ├── types.ts
 │   └── validation.ts
@@ -58,8 +59,6 @@ A production-ready, modular AI Travel Guide app built with **Next.js App Router*
    ```env
    OPENAI_API_KEY=your_openai_api_key_here
    OPENAI_MODEL=gpt-4.1-mini
-   OPENAI_TIMEOUT_MS=20000
-   OPENAI_MAX_RETRIES=2
    ```
 4. Run development server:
    ```bash
@@ -112,46 +111,60 @@ Response shape:
   "total_estimated_budget": "",
   "packing_list": [],
   "travel_tips": [],
-  "safety_notes": [],
-  "itinerary_id": "uuid",
-  "request_id": "uuid"
+  "safety_notes": []
 }
 ```
 
-### `GET /api/itineraries`
-
-Returns saved itinerary history (latest first).
-
-### `GET /api/itineraries/:id`
-
-Returns a saved itinerary (input + plan + metadata).
-
-### `PUT /api/itineraries/:id`
-
-Request body:
+Error response:
 
 ```json
 {
-  "plan": {
-    "summary": "",
-    "daily_plan": [],
-    "hotel_recommendations": [],
-    "local_food_spots": [],
-    "transportation_overview": [],
-    "cost_breakdown": {
-      "accommodation": "",
-      "food": "",
-      "transport": "",
-      "activities": "",
-      "misc": ""
-    },
-    "total_estimated_budget": "",
-    "packing_list": [],
-    "travel_tips": [],
-    "safety_notes": []
-  }
+  "error": "string",
+  "issues": {},
+  "requestId": "uuid"
 }
 ```
+
+## Prompt Engineering and Reliability
+
+- System prompt enforces strict JSON-only responses and realistic logistics.
+- User prompt forces exact schema and exact date-aligned plan length.
+- Runtime output validation ensures malformed AI responses are rejected.
+- Business-rule checks verify returned day count matches date range.
+
+
+## Internal AI Pipeline
+
+The backend executes four explicit phases in `/api/travel-plan`:
+
+1. `validate_input`
+2. `plan_tasks`
+3. `synthesize_itinerary`
+4. `validate_output`
+
+Planner output schema (validated with Zod before synthesis):
+
+```json
+{
+  "tasks": [
+    {
+      "id": "task-1",
+      "type": "transport",
+      "priority": "high",
+      "status": "pending",
+      "notes": "Use airport express train as primary transfer option."
+    }
+  ]
+}
+```
+
+`tasks[].type` values: `transport | stay | activities | budget`
+
+`tasks[].priority` values: `high | medium | low`
+
+`tasks[].status` values: `pending | complete | failed`
+
+If planning returns malformed JSON or fails schema validation, API returns a controlled 502 error and does not continue to synthesis.
 
 ## Deployment on Vercel (Step-by-Step)
 
@@ -175,18 +188,17 @@ Request body:
 ```bash
 npm run lint
 npm run typecheck
-npm run test
 npm run build
 npm run start
 ```
 
 ## Performance Optimization Tips
 
-- Keep route handlers lean; do validation before model calls.
+- Validate request payload before model calls.
 - Use low temperature for predictable JSON outputs.
-- Cache static assets and use Next.js automatic optimizations.
-- Split UI into components to reduce rerender complexity.
-- Add response caching / persistence once trips are stored.
+- Use route-level timeout/retry to reduce transient model failures.
+- Keep reusable UI components to reduce rerender complexity.
+- Add caching/persistence when introducing saved trips.
 
 ## SaaS Extension Roadmap
 
@@ -209,6 +221,6 @@ npm run start
 
 ## Security Notes
 
-- API key is never exposed to browser code.
-- Input and output are schema-validated.
-- The system prompt enforces strict JSON response formatting.
+- API key is server-only and never exposed to browser code.
+- Input and output are schema-validated with Zod.
+- JSON parse and schema checks defend against malformed model output.

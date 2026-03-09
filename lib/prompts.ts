@@ -1,38 +1,89 @@
-import type { TravelRequest } from "@/lib/types";
+import { getTripDaysInclusive } from "@/lib/date";
+import type { PlannerTask, TravelRequest } from "@/lib/types";
 
 export const TRAVEL_SYSTEM_PROMPT = `You are TravelGuidePro, a senior AI travel planner.
-Your outputs must be practical, realistic, and safety-conscious.
+Your output must be practical, realistic, and safety-conscious.
 
-Rules:
-1) Return ONLY valid JSON with no markdown, no backticks, and no extra commentary.
-2) Follow the exact output schema requested by the user.
-3) Costs must be realistic for the destination, travel dates, and budget.
-4) Do not invent impossible places or clearly fake venues; if uncertain, use "popular local option" wording.
-5) Keep daily schedules feasible with travel time consideration.
-6) Include concise but actionable safety notes.
-7) Respect travel type preferences (solo/couple/family/friends).
-8) Mention transportation options that are commonly available in that city/region.
+Hard rules:
+1) Return ONLY valid JSON. No markdown, no comments, no extra keys.
+2) Follow the exact schema from the user prompt.
+3) Do not invent impossible or fictional venues.
+4) Keep itineraries logistically feasible and avoid impossible same-day transfers.
+5) Cost estimates must be realistic for destination + duration + budget.
+6) Keep recommendations family-safe if travelType is family.
+7) Include concise safety notes with concrete actions.
+8) If uncertain about venue names, use "popular local option" phrasing.
 `;
 
-export function buildTravelUserPrompt(input: TravelRequest): string {
-  const start = new Date(`${input.startDate}T00:00:00.000Z`);
-  const end = new Date(`${input.endDate}T00:00:00.000Z`);
-  const msPerDay = 24 * 60 * 60 * 1000;
-  const tripLengthDays = Math.floor((end.getTime() - start.getTime()) / msPerDay) + 1;
+export const PLANNER_SYSTEM_PROMPT = `You are TravelGuidePro Planner.
+You must create machine-readable planning tasks before itinerary synthesis.
+Return ONLY valid JSON with no markdown, no comments, and no extra keys.
+`;
 
-  return `Create a travel plan based on:
+export function buildPlanningPrompt(input: TravelRequest): string {
+  const totalDays = getTripDaysInclusive(input.startDate, input.endDate);
+
+  return `Create planning tasks for this trip.
+
+Trip details:
 - Destination: ${input.destination}
 - Start date: ${input.startDate}
 - End date: ${input.endDate}
-- Trip length in days: ${tripLengthDays}
+- Duration: ${totalDays} day(s)
 - Budget range: ${input.budgetRange}
 - Travel type: ${input.travelType}
 - Interests: ${input.interests.join(", ")}
 
-Hard constraints:
-- "daily_plan" must include exactly ${tripLengthDays} day entries.
-- Day numbers must be sequential starting at 1.
-- "date" values must be sequential calendar dates from ${input.startDate} through ${input.endDate}.
+Rules:
+- Return at least one task for each type: transport, stay, activities, budget.
+- Use realistic task notes tied to destination and traveler profile.
+- Set status as pending unless there is a strong reason to mark failed.
+
+Return strict JSON in this exact shape:
+{
+  "tasks": [
+    {
+      "id": "task-1",
+      "type": "transport",
+      "priority": "high",
+      "status": "pending",
+      "notes": ""
+    }
+  ]
+}`;
+}
+
+function serializePlannerTasks(tasks: PlannerTask[]): string {
+  return tasks
+    .map(
+      (task) =>
+        `- [${task.id}] type=${task.type}; priority=${task.priority}; status=${task.status}; notes=${task.notes || ""}`,
+    )
+    .join("\n");
+}
+
+export function buildTravelUserPrompt(input: TravelRequest, tasks: PlannerTask[]): string {
+  const totalDays = getTripDaysInclusive(input.startDate, input.endDate);
+
+  return `Create a ${totalDays}-day travel itinerary.
+
+Trip details:
+- Destination: ${input.destination}
+- Start date: ${input.startDate}
+- End date: ${input.endDate}
+- Budget range: ${input.budgetRange}
+- Travel type: ${input.travelType}
+- Interests: ${input.interests.join(", ")}
+
+Planning constraints (must follow):
+${serializePlannerTasks(tasks)}
+
+Output requirements:
+- daily_plan length MUST be exactly ${totalDays}
+- daily_plan.day MUST be sequential starting from 1
+- daily_plan.date MUST match each day from ${input.startDate} to ${input.endDate}
+- Keep activities balanced (2-4 activity items/day)
+- Include transportation that is commonly available locally
 
 Return strict JSON in this exact shape:
 {

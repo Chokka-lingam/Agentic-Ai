@@ -1,15 +1,10 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import type {
-  ItineraryListItem,
-  TravelPlanApiResponse,
-  TravelRequest,
-  TravelResponse,
-  TravelType,
-} from "@/lib/types";
+import { FormEvent, useMemo, useState } from "react";
+import type { ApiErrorResponse, TravelRequest, TravelResponse, TravelType } from "@/lib/types";
 
 const interestOptions = ["adventure", "food", "history", "nightlife", "nature", "culture", "shopping"];
+const MAX_TRIP_DAYS = 14;
 
 const initialForm: TravelRequest = {
   destination: "",
@@ -22,6 +17,15 @@ const initialForm: TravelRequest = {
 
 type FormErrors = Partial<Record<keyof TravelRequest, string>>;
 
+function getTripDays(startDate: string, endDate: string): number | null {
+  if (!startDate || !endDate) return null;
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T00:00:00.000Z`);
+  const diff = end.getTime() - start.getTime();
+  if (diff < 0) return null;
+  return Math.floor(diff / (24 * 60 * 60 * 1000)) + 1;
+}
+
 function validate(form: TravelRequest): FormErrors {
   const errors: FormErrors = {};
   if (form.destination.trim().length < 2) errors.destination = "Destination must be at least 2 characters.";
@@ -30,6 +34,12 @@ function validate(form: TravelRequest): FormErrors {
   if (form.startDate && form.endDate && form.endDate < form.startDate) {
     errors.endDate = "End date must be after start date.";
   }
+
+  const days = getTripDays(form.startDate, form.endDate);
+  if (days && days > MAX_TRIP_DAYS) {
+    errors.endDate = `Trip cannot exceed ${MAX_TRIP_DAYS} days per request.`;
+  }
+
   if (form.budgetRange.trim().length < 2) errors.budgetRange = "Budget range is required.";
   if (form.interests.length === 0) errors.interests = "Select at least one interest.";
   return errors;
@@ -37,25 +47,19 @@ function validate(form: TravelRequest): FormErrors {
 
 export default function TravelForm() {
   const [form, setForm] = useState<TravelRequest>(initialForm);
-  const [result, setResult] = useState<TravelPlanApiResponse | null>(null);
-  const [history, setHistory] = useState<ItineraryListItem[]>([]);
+  const [result, setResult] = useState<TravelResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
-  const [isSavingEdits, setIsSavingEdits] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [requestId, setRequestId] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [editSummary, setEditSummary] = useState("");
-  const [editBudget, setEditBudget] = useState("");
 
+  const tripDays = useMemo(() => getTripDays(form.startDate, form.endDate), [form.startDate, form.endDate]);
   const canSubmit = useMemo(() => !isLoading, [isLoading]);
-
-  useEffect(() => {
-    void loadHistory();
-  }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setRequestId(null);
 
     const formErrors = validate(form);
     setErrors(formErrors);
@@ -69,16 +73,15 @@ export default function TravelForm() {
         body: JSON.stringify(form),
       });
 
-      const payload = (await response.json()) as TravelPlanApiResponse | { error?: string };
+      const payload = (await response.json()) as TravelResponse | ApiErrorResponse;
       if (!response.ok) {
-        throw new Error((payload as { error?: string }).error || "Request failed");
+        const errorPayload = payload as ApiErrorResponse;
+        setRequestId(errorPayload.requestId || response.headers.get("x-request-id"));
+        throw new Error(errorPayload.error || "Request failed");
       }
 
-      const nextResult = payload as TravelPlanApiResponse;
-      setResult(nextResult);
-      setEditSummary(nextResult.summary);
-      setEditBudget(nextResult.total_estimated_budget);
-      await loadHistory();
+      setRequestId(response.headers.get("x-request-id"));
+      setResult(payload as TravelResponse);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error occurred");
     } finally {
@@ -95,90 +98,9 @@ export default function TravelForm() {
     }));
   }
 
-  async function loadHistory() {
-    setIsHistoryLoading(true);
-    try {
-      const response = await fetch("/api/itineraries", { cache: "no-store" });
-      const payload = (await response.json()) as { itineraries?: ItineraryListItem[]; error?: string };
-      if (!response.ok) {
-        throw new Error(payload.error || "Failed to load history");
-      }
-      setHistory(payload.itineraries ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load history");
-    } finally {
-      setIsHistoryLoading(false);
-    }
-  }
-
-  async function loadItineraryById(id: string) {
-    setError(null);
-    try {
-      const response = await fetch(`/api/itineraries/${id}`, { cache: "no-store" });
-      const payload = (await response.json()) as {
-        itinerary?: { id: string; input: TravelRequest; plan: TravelResponse };
-        error?: string;
-      };
-      if (!response.ok || !payload.itinerary) {
-        throw new Error(payload.error || "Failed to load itinerary");
-      }
-
-      const nextResult: TravelPlanApiResponse = {
-        ...payload.itinerary.plan,
-        itinerary_id: payload.itinerary.id,
-        request_id: "history-load",
-      };
-      setResult(nextResult);
-      setForm(payload.itinerary.input);
-      setEditSummary(nextResult.summary);
-      setEditBudget(nextResult.total_estimated_budget);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load itinerary");
-    }
-  }
-
-  async function saveEdits() {
-    if (!result?.itinerary_id) return;
-
-    setIsSavingEdits(true);
-    setError(null);
-    try {
-      const planPayload: TravelResponse = {
-        ...result,
-        summary: editSummary,
-        total_estimated_budget: editBudget,
-      };
-
-      const response = await fetch(`/api/itineraries/${result.itinerary_id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planPayload }),
-      });
-      const payload = (await response.json()) as {
-        itinerary?: { id: string; plan: TravelResponse };
-        error?: string;
-      };
-      if (!response.ok || !payload.itinerary) {
-        throw new Error(payload.error || "Failed to save edits");
-      }
-
-      const updatedResult: TravelPlanApiResponse = {
-        ...payload.itinerary.plan,
-        itinerary_id: payload.itinerary.id,
-        request_id: result.request_id,
-      };
-      setResult(updatedResult);
-      await loadHistory();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save edits");
-    } finally {
-      setIsSavingEdits(false);
-    }
-  }
-
   return (
     <div className="grid gap-6 lg:grid-cols-[440px,1fr]">
-      <form className="card h-fit" onSubmit={onSubmit}>
+      <form className="card h-fit" onSubmit={onSubmit} noValidate>
         <h2 className="mb-4 text-lg font-semibold">Plan your trip</h2>
 
         <label className="label" htmlFor="destination">Destination</label>
@@ -188,6 +110,8 @@ export default function TravelForm() {
           value={form.destination}
           onChange={(e) => setForm((f) => ({ ...f, destination: e.target.value }))}
           placeholder="e.g. Tokyo, Japan"
+          disabled={isLoading}
+          aria-invalid={Boolean(errors.destination)}
         />
         {errors.destination && <p className="mb-3 text-xs text-red-600">{errors.destination}</p>}
 
@@ -200,6 +124,8 @@ export default function TravelForm() {
               className="input mb-1"
               value={form.startDate}
               onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
+              disabled={isLoading}
+              aria-invalid={Boolean(errors.startDate)}
             />
             {errors.startDate && <p className="text-xs text-red-600">{errors.startDate}</p>}
           </div>
@@ -211,10 +137,14 @@ export default function TravelForm() {
               className="input mb-1"
               value={form.endDate}
               onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
+              disabled={isLoading}
+              aria-invalid={Boolean(errors.endDate)}
             />
             {errors.endDate && <p className="text-xs text-red-600">{errors.endDate}</p>}
           </div>
         </div>
+
+        {tripDays && <p className="mt-2 text-xs text-slate-500">Trip duration: {tripDays} day(s)</p>}
 
         <label className="label mt-3" htmlFor="budgetRange">Budget range</label>
         <input
@@ -223,6 +153,8 @@ export default function TravelForm() {
           value={form.budgetRange}
           onChange={(e) => setForm((f) => ({ ...f, budgetRange: e.target.value }))}
           placeholder="e.g. $1500 - $2500"
+          disabled={isLoading}
+          aria-invalid={Boolean(errors.budgetRange)}
         />
         {errors.budgetRange && <p className="mb-3 text-xs text-red-600">{errors.budgetRange}</p>}
 
@@ -232,6 +164,7 @@ export default function TravelForm() {
           className="input"
           value={form.travelType}
           onChange={(e) => setForm((f) => ({ ...f, travelType: e.target.value as TravelType }))}
+          disabled={isLoading}
         >
           <option value="solo">Solo</option>
           <option value="couple">Couple</option>
@@ -248,11 +181,13 @@ export default function TravelForm() {
                 key={option}
                 type="button"
                 onClick={() => toggleInterest(option)}
+                disabled={isLoading}
+                aria-pressed={selected}
                 className={`rounded-full border px-3 py-1.5 text-sm transition ${
                   selected
                     ? "border-brand-500 bg-brand-50 text-brand-700"
                     : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
-                }`}
+                } disabled:opacity-60`}
               >
                 {option}
               </button>
@@ -270,42 +205,10 @@ export default function TravelForm() {
         </button>
 
         {error && <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-
-        <div className="mt-6 border-t border-slate-200 pt-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Saved itineraries</h3>
-            <button
-              type="button"
-              onClick={() => void loadHistory()}
-              className="text-xs font-medium text-brand-700 underline"
-            >
-              Refresh
-            </button>
-          </div>
-          <div className="max-h-56 space-y-2 overflow-auto">
-            {isHistoryLoading && <p className="text-xs text-slate-500">Loading history...</p>}
-            {!isHistoryLoading && history.length === 0 && (
-              <p className="text-xs text-slate-500">No itineraries saved yet.</p>
-            )}
-            {history.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={`w-full rounded-md border p-2 text-left text-xs ${
-                  result?.itinerary_id === item.id ? "border-brand-500 bg-brand-50" : "border-slate-200"
-                }`}
-                onClick={() => void loadItineraryById(item.id)}
-              >
-                <p className="font-semibold">{item.destination}</p>
-                <p className="text-slate-600">{item.startDate} to {item.endDate}</p>
-                <p className="text-slate-600">{item.totalEstimatedBudget}</p>
-              </button>
-            ))}
-          </div>
-        </div>
+        {requestId && <p className="mt-2 text-xs text-slate-500">Request ID: {requestId}</p>}
       </form>
 
-      <section className="card min-h-[420px]">
+      <section className="card min-h-[420px]" aria-live="polite">
         {!result ? (
           <div className="flex h-full items-center justify-center text-center text-slate-500">
             {isLoading ? "AI is crafting your itinerary..." : "Your generated itinerary will appear here."}
@@ -322,7 +225,7 @@ export default function TravelForm() {
               <div className="mt-3 space-y-3">
                 {result.daily_plan.map((day) => (
                   <div key={`${day.day}-${day.date}`} className="rounded-xl border border-slate-200 p-4">
-                    <p className="font-semibold">Day {day.day} - {day.date}</p>
+                    <p className="font-semibold">Day {day.day} • {day.date}</p>
                     <p className="mt-2 text-sm"><strong>Activities:</strong> {day.activities.join(", ")}</p>
                     <p className="mt-1 text-sm"><strong>Food:</strong> {day.food.join(", ")}</p>
                     <p className="mt-1 text-sm"><strong>Transport:</strong> {day.transport}</p>
@@ -352,34 +255,6 @@ export default function TravelForm() {
               </ul>
               <p className="mt-2 font-semibold">Total Estimated Budget: {result.total_estimated_budget}</p>
             </div>
-
-            {result.itinerary_id && (
-              <div className="rounded-xl border border-slate-200 p-4">
-                <h4 className="text-lg font-semibold">Edit saved itinerary</h4>
-                <label className="label mt-3" htmlFor="editSummary">Summary</label>
-                <textarea
-                  id="editSummary"
-                  className="input min-h-28"
-                  value={editSummary}
-                  onChange={(event) => setEditSummary(event.target.value)}
-                />
-                <label className="label mt-3" htmlFor="editBudget">Total budget</label>
-                <input
-                  id="editBudget"
-                  className="input"
-                  value={editBudget}
-                  onChange={(event) => setEditBudget(event.target.value)}
-                />
-                <button
-                  type="button"
-                  className="mt-3 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-70"
-                  onClick={() => void saveEdits()}
-                  disabled={isSavingEdits}
-                >
-                  {isSavingEdits ? "Saving..." : "Save edits"}
-                </button>
-              </div>
-            )}
           </div>
         )}
       </section>

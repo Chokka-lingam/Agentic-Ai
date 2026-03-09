@@ -9,6 +9,22 @@ export type TravelRequest = {
   interests: string[];
 };
 
+export type PlannerTaskType = "transport" | "stay" | "activities" | "budget";
+export type PlannerTaskPriority = "high" | "medium" | "low";
+export type PlannerTaskStatus = "pending" | "complete" | "failed";
+
+export type PlannerTask = {
+  id: string;
+  type: PlannerTaskType;
+  priority: PlannerTaskPriority;
+  status: PlannerTaskStatus;
+  notes?: string;
+};
+
+export type PlannerResponse = {
+  tasks: PlannerTask[];
+};
+
 export type DailyPlan = {
   day: number;
   date: string;
@@ -37,26 +53,8 @@ export type TravelResponse = {
   safety_notes: string[];
 };
 
-export type StoredItinerary = {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  input: TravelRequest;
-  plan: TravelResponse;
-};
-
-export type ItineraryListItem = {
-  id: string;
-  destination: string;
-  startDate: string;
-  endDate: string;
-  travelType: TravelType;
-  totalEstimatedBudget: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type TravelPlanApiResponse = TravelResponse & {
-  itinerary_id: string;
-  request_id: string;
+export type ApiErrorResponse = {
+  error: string;
+  issues?: unknown;
+  requestId?: string;
 };

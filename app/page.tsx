@@ -8,8 +8,9 @@ export default function HomePage() {
           AI Travel Guide Agent
         </h1>
         <p className="mt-2 text-slate-600">
-          Build an intelligent trip plan with itinerary, hotels, food, transport, budget, and safety tips.
+          Build an intelligent trip plan with itinerary, hotels, food, transport, budget, packing tips, and safety notes.
         </p>
+        <p className="mt-1 text-sm text-slate-500">For reliability, each request supports up to 14 trip days.</p>
       </header>
       <TravelForm />
     </main>
