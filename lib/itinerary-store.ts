@@ -2,7 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { ItineraryListItem, StoredItinerary, TravelRequest, TravelResponse } from "@/lib/types";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR = process.env.VERCEL ? path.join("/tmp", "ai-travel-guide-agent") : path.join(process.cwd(), "data");
 const STORE_FILE = path.join(DATA_DIR, "itineraries.json");
 
 export async function createItinerary(input: TravelRequest, plan: TravelResponse): Promise<StoredItinerary> {

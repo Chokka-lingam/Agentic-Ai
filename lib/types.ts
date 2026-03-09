@@ -70,3 +70,22 @@ export type GeocodeLocation = {
 export type GeocodeResponse = {
   locations: GeocodeLocation[];
 };
+
+export type StoredItinerary = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  input: TravelRequest;
+  plan: TravelResponse;
+};
+
+export type ItineraryListItem = {
+  id: string;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  travelType: TravelType;
+  totalEstimatedBudget: string;
+  createdAt: string;
+  updatedAt: string;
+};
