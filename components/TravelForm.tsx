@@ -106,6 +106,7 @@ export default function TravelForm() {
     setRequestId(null);
     setMapError(null);
     setMapLocations([]);
+    setResult(null);
 
     const formErrors = validate(form);
     setErrors(formErrors);
