@@ -41,7 +41,7 @@ export async function generateTravelPlanWithLLM(
           temperature: 0.4,
           messages: [
             { role: "system", content: TRAVEL_SYSTEM_PROMPT },
-            { role: "user", content: buildTravelUserPrompt(input) },
+            { role: "user", content: buildTravelUserPrompt(input, []) },
           ],
           response_format: zodResponseFormat(TravelResponseSchema, "travel_plan"),
         });
