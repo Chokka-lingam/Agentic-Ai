@@ -58,3 +58,14 @@ export type ApiErrorResponse = {
   issues?: unknown;
   requestId?: string;
 };
+
+export type GeocodeLocation = {
+  name: string;
+  latitude: number;
+  longitude: number;
+  description: string;
+};
+
+export type GeocodeResponse = {
+  location: GeocodeLocation;
+};

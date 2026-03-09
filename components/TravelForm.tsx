@@ -1,10 +1,19 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { FormEvent, useMemo, useState } from "react";
-import type { ApiErrorResponse, TravelRequest, TravelResponse, TravelType } from "@/lib/types";
+import type {
+  ApiErrorResponse,
+  GeocodeLocation,
+  GeocodeResponse,
+  TravelRequest,
+  TravelResponse,
+  TravelType,
+} from "@/lib/types";
 
 const interestOptions = ["adventure", "food", "history", "nightlife", "nature", "culture", "shopping"];
 const MAX_TRIP_DAYS = 14;
+const LocationMap = dynamic(() => import("@/components/LocationMap"), { ssr: false });
 
 const initialForm: TravelRequest = {
   destination: "",
@@ -49,23 +58,61 @@ export default function TravelForm() {
   const [form, setForm] = useState<TravelRequest>(initialForm);
   const [result, setResult] = useState<TravelResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMapLoading, setIsMapLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [mapLocation, setMapLocation] = useState<GeocodeLocation | null>(null);
 
   const tripDays = useMemo(() => getTripDays(form.startDate, form.endDate), [form.startDate, form.endDate]);
   const canSubmit = useMemo(() => !isLoading, [isLoading]);
+  const markerDescription = useMemo(() => {
+    if (!mapLocation) return "";
+    if (result?.summary) return result.summary.slice(0, 140);
+    return mapLocation.description;
+  }, [mapLocation, result?.summary]);
+
+  async function fetchCoordinates(place: string): Promise<GeocodeLocation> {
+    const response = await fetch("/api/geocode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ place }),
+    });
+
+    const payload = (await response.json()) as GeocodeResponse | { error?: string };
+    if (!response.ok || !("location" in payload)) {
+      throw new Error(("error" in payload && payload.error) || "Failed to fetch location.");
+    }
+
+    return payload.location;
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setRequestId(null);
+    setMapError(null);
+    setMapLocation(null);
 
     const formErrors = validate(form);
     setErrors(formErrors);
     if (Object.keys(formErrors).length > 0) return;
 
     setIsLoading(true);
+    setIsMapLoading(true);
+
+    const geocodeTask = fetchCoordinates(form.destination)
+      .then((location) => {
+        setMapLocation(location);
+      })
+      .catch((err) => {
+        setMapError(err instanceof Error ? err.message : "Failed to load map location.");
+      })
+      .finally(() => {
+        setIsMapLoading(false);
+      });
+
     try {
       const response = await fetch("/api/travel-plan", {
         method: "POST",
@@ -86,6 +133,7 @@ export default function TravelForm() {
       setError(err instanceof Error ? err.message : "Unexpected error occurred");
     } finally {
       setIsLoading(false);
+      await geocodeTask;
     }
   }
 
@@ -225,7 +273,7 @@ export default function TravelForm() {
               <div className="mt-3 space-y-3">
                 {result.daily_plan.map((day) => (
                   <div key={`${day.day}-${day.date}`} className="rounded-xl border border-slate-200 p-4">
-                    <p className="font-semibold">Day {day.day} • {day.date}</p>
+                    <p className="font-semibold">Day {day.day} - {day.date}</p>
                     <p className="mt-2 text-sm"><strong>Activities:</strong> {day.activities.join(", ")}</p>
                     <p className="mt-1 text-sm"><strong>Food:</strong> {day.food.join(", ")}</p>
                     <p className="mt-1 text-sm"><strong>Transport:</strong> {day.transport}</p>
@@ -254,6 +302,29 @@ export default function TravelForm() {
                 <li>Misc: {result.cost_breakdown.misc}</li>
               </ul>
               <p className="mt-2 font-semibold">Total Estimated Budget: {result.total_estimated_budget}</p>
+            </div>
+
+            <div>
+              <h4 className="text-lg font-semibold">Destination map</h4>
+              <p className="mt-1 text-sm text-slate-600">Map preview for {form.destination}</p>
+              <div className="mt-3">
+                {isMapLoading && (
+                  <div className="flex h-[320px] items-center justify-center rounded-xl border border-slate-200 text-slate-500 sm:h-[420px]">
+                    Loading map...
+                  </div>
+                )}
+                {!isMapLoading && mapError && (
+                  <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{mapError}</p>
+                )}
+                {!isMapLoading && mapLocation && (
+                  <LocationMap
+                    location={{
+                      ...mapLocation,
+                      description: markerDescription,
+                    }}
+                  />
+                )}
+              </div>
             </div>
           </div>
         )}
