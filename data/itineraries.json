@@ -1,0 +1,322 @@
+[
+  {
+    "id": "9350fea1-0f04-46fb-a5ff-68431534e3d3",
+    "createdAt": "2026-03-09T12:09:46.218Z",
+    "updatedAt": "2026-03-09T12:09:46.218Z",
+    "input": {
+      "destination": "Tokyo",
+      "startDate": "2026-03-09",
+      "endDate": "2026-03-12",
+      "budgetRange": "50000",
+      "travelType": "solo",
+      "interests": [
+        "food"
+      ]
+    },
+    "plan": {
+      "summary": "A 4-day solo food-focused trip to Tokyo exploring diverse culinary experiences from street food to traditional dining, combined with cultural visits to enhance the travel experience. Budget-conscious with efficient transportation and comfortable accommodation.",
+      "daily_plan": [
+        {
+          "day": 1,
+          "date": "2026-03-09",
+          "activities": [
+            "Visit Tsukiji Outer Market for fresh seafood and street food tasting",
+            "Explore Ginza district for shopping and cafes",
+            "Evening walk at Shibuya Crossing and visit nearby izakayas"
+          ],
+          "food": [
+            "Breakfast at Tsukiji Outer Market stalls",
+            "Lunch at a sushi restaurant in Ginza",
+            "Dinner at a popular izakaya in Shibuya"
+          ],
+          "transport": "Use Tokyo Metro and JR lines with a prepaid IC card (Suica or Pasmo)",
+          "estimated_cost": "¥8000 (approx. $60 USD)"
+        },
+        {
+          "day": 2,
+          "date": "2026-03-10",
+          "activities": [
+            "Morning visit to Asakusa and Senso-ji Temple",
+            "Explore Nakamise Shopping Street for traditional snacks",
+            "Afternoon visit to Ueno Park and Ameya-Yokocho market"
+          ],
+          "food": [
+            "Breakfast at a local café in Asakusa",
+            "Lunch trying tempura at a local restaurant",
+            "Dinner at a ramen shop near Ueno"
+          ],
+          "transport": "Tokyo Metro and local buses using IC card",
+          "estimated_cost": "¥7000 (approx. $52 USD)"
+        },
+        {
+          "day": 3,
+          "date": "2026-03-11",
+          "activities": [
+            "Day trip to Tsukiji Fish Market for sushi breakfast",
+            "Visit teamLab Borderless digital art museum in Odaiba",
+            "Evening stroll along Odaiba waterfront"
+          ],
+          "food": [
+            "Sushi breakfast at Tsukiji",
+            "Lunch at Odaiba food court",
+            "Dinner at a yakitori restaurant in Odaiba"
+          ],
+          "transport": "JR Yamanote Line and Yurikamome Line with IC card",
+          "estimated_cost": "¥9000 (approx. $68 USD)"
+        },
+        {
+          "day": 4,
+          "date": "2026-03-12",
+          "activities": [
+            "Visit Harajuku for trendy cafes and crepes",
+            "Walk through Meiji Shrine",
+            "Last minute shopping in Omotesando"
+          ],
+          "food": [
+            "Breakfast at a Harajuku crepe stand",
+            "Lunch at a café in Omotesando",
+            "Dinner at a traditional Japanese restaurant"
+          ],
+          "transport": "Tokyo Metro and walking",
+          "estimated_cost": "¥7000 (approx. $52 USD)"
+        }
+      ],
+      "hotel_recommendations": [
+        "Hotel Gracery Shinjuku - central location, good for solo travelers",
+        "Tokyu Stay Shibuya - convenient for food and nightlife",
+        "APA Hotel Tokyo-Shiomi-Ekimae - budget-friendly with easy metro access"
+      ],
+      "local_food_spots": [
+        "Tsukiji Outer Market",
+        "Nakamise Shopping Street",
+        "Ameya-Yokocho Market",
+        "Shibuya Izakayas",
+        "Harajuku Crepe Stands"
+      ],
+      "transportation_overview": [
+        "Tokyo Metro and JR lines are the most efficient for city travel",
+        "Purchase a Suica or Pasmo IC card for convenient tap-in/out on trains and buses",
+        "Walking is recommended in concentrated areas like Harajuku and Shibuya",
+        "Yurikamome Line for Odaiba area access"
+      ],
+      "cost_breakdown": {
+        "accommodation": "¥20000 (approx. $150 USD) for 3 nights in a mid-range hotel",
+        "food": "¥28000 (approx. $210 USD) covering all meals and snacks",
+        "transport": "¥4000 (approx. $30 USD) for IC card top-ups and day trips",
+        "activities": "¥3000 (approx. $23 USD) for entrance fees and small purchases",
+        "misc": "¥2000 (approx. $15 USD) for souvenirs and incidentals"
+      },
+      "total_estimated_budget": "¥57000 (approx. $430 USD)",
+      "packing_list": [
+        "Comfortable walking shoes",
+        "Light jacket for March weather",
+        "Portable phone charger",
+        "Reusable water bottle",
+        "Travel-size umbrella"
+      ],
+      "travel_tips": [
+        "Carry a prepaid IC card for easy transportation",
+        "Learn basic Japanese greetings and food-related phrases",
+        "Cash is preferred in many small eateries; ATMs are widely available",
+        "Try to avoid peak commuting hours on trains for comfort",
+        "Respect local customs especially in religious sites"
+      ],
+      "safety_notes": [
+        "Tokyo is generally very safe but keep an eye on personal belongings in crowded areas",
+        "Follow local COVID-19 guidelines and hygiene practices",
+        "Use well-lit and populated routes when walking at night",
+        "Keep emergency contact numbers and embassy info handy",
+        "Be cautious when trying unfamiliar foods if you have allergies"
+      ]
+    }
+  },
+  {
+    "id": "50b7b266-eac7-4f77-8c0b-a8923d4ea795",
+    "createdAt": "2026-03-09T12:08:18.687Z",
+    "updatedAt": "2026-03-09T12:08:18.687Z",
+    "input": {
+      "destination": "Thailand",
+      "startDate": "2026-02-20",
+      "endDate": "2026-02-27",
+      "budgetRange": "50000",
+      "travelType": "solo",
+      "interests": [
+        "food"
+      ]
+    },
+    "plan": {
+      "summary": "An 8-day solo food-focused trip to Thailand from February 20 to 27, 2026, exploring Bangkok and Chiang Mai's vibrant street food scenes, local markets, and cooking classes within a budget of 50,000 THB.",
+      "daily_plan": [
+        {
+          "day": 1,
+          "date": "2026-02-20",
+          "activities": [
+            "Arrival in Bangkok",
+            "Check-in at hotel",
+            "Evening walk and street food tasting at Yaowarat (Chinatown)"
+          ],
+          "food": [
+            "Street food snacks in Chinatown"
+          ],
+          "transport": "Airport taxi to hotel, walking in Chinatown",
+          "estimated_cost": "1500 THB"
+        },
+        {
+          "day": 2,
+          "date": "2026-02-21",
+          "activities": [
+            "Visit Or Tor Kor Market",
+            "Lunch at local market stalls",
+            "Explore Chatuchak Weekend Market (if weekend)",
+            "Evening dinner at a popular local Thai restaurant"
+          ],
+          "food": [
+            "Fresh fruit and Thai dishes at Or Tor Kor Market",
+            "Dinner at local restaurant"
+          ],
+          "transport": "BTS Skytrain and walking",
+          "estimated_cost": "1200 THB"
+        },
+        {
+          "day": 3,
+          "date": "2026-02-22",
+          "activities": [
+            "Day tour to Ayutthaya with food stops",
+            "Try local river prawns and Thai desserts",
+            "Return to Bangkok"
+          ],
+          "food": [
+            "Lunch at Ayutthaya local restaurant",
+            "Snacks during tour"
+          ],
+          "transport": "Tour van or train to Ayutthaya",
+          "estimated_cost": "2000 THB"
+        },
+        {
+          "day": 4,
+          "date": "2026-02-23",
+          "activities": [
+            "Flight to Chiang Mai",
+            "Check-in at hotel",
+            "Evening visit to Chiang Mai Night Bazaar"
+          ],
+          "food": [
+            "Khao Soi (Northern Thai curry noodle soup)",
+            "Street food at Night Bazaar"
+          ],
+          "transport": "Domestic flight, taxi to hotel, walking",
+          "estimated_cost": "2500 THB"
+        },
+        {
+          "day": 5,
+          "date": "2026-02-24",
+          "activities": [
+            "Morning Thai cooking class",
+            "Visit Warorot Market",
+            "Explore local cafes"
+          ],
+          "food": [
+            "Cooking class meal",
+            "Snacks and coffee at cafes"
+          ],
+          "transport": "Taxi and walking",
+          "estimated_cost": "1800 THB"
+        },
+        {
+          "day": 6,
+          "date": "2026-02-25",
+          "activities": [
+            "Day trip to Doi Suthep and local villages",
+            "Try local hill tribe food specialties"
+          ],
+          "food": [
+            "Lunch in local village",
+            "Street snacks"
+          ],
+          "transport": "Songthaew (shared taxi) or private taxi",
+          "estimated_cost": "1500 THB"
+        },
+        {
+          "day": 7,
+          "date": "2026-02-26",
+          "activities": [
+            "Relax at hotel or spa",
+            "Explore Nimmanhaemin Road food scene",
+            "Dinner at a well-reviewed local restaurant"
+          ],
+          "food": [
+            "Spa snacks",
+            "Dinner at local restaurant"
+          ],
+          "transport": "Taxi and walking",
+          "estimated_cost": "1500 THB"
+        },
+        {
+          "day": 8,
+          "date": "2026-02-27",
+          "activities": [
+            "Morning local market visit",
+            "Flight back to Bangkok and onward departure"
+          ],
+          "food": [
+            "Breakfast at market"
+          ],
+          "transport": "Taxi to airport, domestic flight",
+          "estimated_cost": "2000 THB"
+        }
+      ],
+      "hotel_recommendations": [
+        "Bangkok: Rambuttri Village Inn & Plaza (budget-friendly, central location)",
+        "Chiang Mai: Green Tiger Vegetarian House (comfortable, near Night Bazaar)"
+      ],
+      "local_food_spots": [
+        "Yaowarat Street Food, Bangkok",
+        "Or Tor Kor Market, Bangkok",
+        "Chiang Mai Night Bazaar",
+        "Warorot Market, Chiang Mai",
+        "Nimmanhaemin Road food stalls, Chiang Mai"
+      ],
+      "transportation_overview": [
+        "Use airport taxis or Grab app for airport transfers",
+        "BTS Skytrain and MRT in Bangkok for city travel",
+        "Songthaews and taxis in Chiang Mai",
+        "Domestic flights between Bangkok and Chiang Mai",
+        "Walking for local market and street food exploration"
+      ],
+      "cost_breakdown": {
+        "accommodation": "12000 THB",
+        "food": "10000 THB",
+        "transport": "8000 THB",
+        "activities": "7000 THB",
+        "misc": "3000 THB"
+      },
+      "total_estimated_budget": "40000 THB",
+      "packing_list": [
+        "Lightweight clothing suitable for warm weather",
+        "Comfortable walking shoes",
+        "Sunhat and sunglasses",
+        "Reusable water bottle",
+        "Travel umbrella or raincoat (February is dry but occasional showers possible)",
+        "Basic first aid kit",
+        "Power adapter (Type A, B, C, F plugs used in Thailand)",
+        "Copies of important documents"
+      ],
+      "travel_tips": [
+        "Carry small change for street food and market purchases",
+        "Use reputable taxi services or ride-hailing apps for safety",
+        "Stay hydrated and use sunscreen",
+        "Respect local customs and dress modestly when visiting temples",
+        "Learn basic Thai greetings to enhance interactions",
+        "Keep an eye on belongings in crowded markets"
+      ],
+      "safety_notes": [
+        "Avoid drinking tap water; use bottled water",
+        "Be cautious when crossing streets; traffic can be busy and chaotic",
+        "Beware of scams around tourist areas; agree on taxi fares beforehand",
+        "Keep valuables secure and avoid displaying expensive items",
+        "Follow local COVID-19 guidelines and health advisories",
+        "Inform someone of your daily itinerary when traveling solo"
+      ]
+    }
+  }
+]

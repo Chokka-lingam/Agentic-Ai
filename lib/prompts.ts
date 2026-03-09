@@ -84,10 +84,14 @@ Output requirements:
 - daily_plan.date MUST match each day from ${input.startDate} to ${input.endDate}
 - Keep activities balanced (2-4 activity items/day)
 - Include transportation that is commonly available locally
+- Include map_locations as 5-10 map-search-ready queries in this format:
+  "Exact Place Name, Area/City, Country"
+- map_locations MUST be specific enough for map lookup (avoid generic phrases)
 
 Return strict JSON in this exact shape:
 {
   "summary": "",
+  "map_locations": [""],
   "daily_plan": [
     {
       "day": 1,

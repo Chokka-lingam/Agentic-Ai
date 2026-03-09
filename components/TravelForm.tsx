@@ -26,6 +26,12 @@ const initialForm: TravelRequest = {
 
 type FormErrors = Partial<Record<keyof TravelRequest, string>>;
 
+function buildMapPlaces(result: TravelResponse, destination: string): string[] {
+  const places = result.map_locations.length > 0 ? result.map_locations : [destination];
+
+  return Array.from(new Set(places.map((place) => place.trim()).filter((place) => place.length >= 2))).slice(0, 10);
+}
+
 function getTripDays(startDate: string, endDate: string): number | null {
   if (!startDate || !endDate) return null;
   const start = new Date(`${startDate}T00:00:00.000Z`);
@@ -63,29 +69,35 @@ export default function TravelForm() {
   const [mapError, setMapError] = useState<string | null>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [mapLocation, setMapLocation] = useState<GeocodeLocation | null>(null);
+  const [mapLocations, setMapLocations] = useState<GeocodeLocation[]>([]);
 
   const tripDays = useMemo(() => getTripDays(form.startDate, form.endDate), [form.startDate, form.endDate]);
   const canSubmit = useMemo(() => !isLoading, [isLoading]);
-  const markerDescription = useMemo(() => {
-    if (!mapLocation) return "";
-    if (result?.summary) return result.summary.slice(0, 140);
-    return mapLocation.description;
-  }, [mapLocation, result?.summary]);
 
-  async function fetchCoordinates(place: string): Promise<GeocodeLocation> {
+  async function fetchCoordinates(places: string[], destinationContext: string): Promise<GeocodeLocation[]> {
+    console.info("[map] Requesting coordinates", { destinationContext, places });
+
     const response = await fetch("/api/geocode", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ place }),
+      body: JSON.stringify({ places, destinationContext }),
     });
 
     const payload = (await response.json()) as GeocodeResponse | { error?: string };
-    if (!response.ok || !("location" in payload)) {
-      throw new Error(("error" in payload && payload.error) || "Failed to fetch location.");
+    if (!response.ok || !("locations" in payload)) {
+      console.error("[map] Geocode request failed", {
+        status: response.status,
+        payload,
+      });
+      throw new Error(("error" in payload && payload.error) || "Failed to fetch map locations.");
     }
 
-    return payload.location;
+    console.info("[map] Coordinates resolved", {
+      count: payload.locations.length,
+      names: payload.locations.map((location) => location.name),
+    });
+
+    return payload.locations;
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -93,25 +105,13 @@ export default function TravelForm() {
     setError(null);
     setRequestId(null);
     setMapError(null);
-    setMapLocation(null);
+    setMapLocations([]);
 
     const formErrors = validate(form);
     setErrors(formErrors);
     if (Object.keys(formErrors).length > 0) return;
 
     setIsLoading(true);
-    setIsMapLoading(true);
-
-    const geocodeTask = fetchCoordinates(form.destination)
-      .then((location) => {
-        setMapLocation(location);
-      })
-      .catch((err) => {
-        setMapError(err instanceof Error ? err.message : "Failed to load map location.");
-      })
-      .finally(() => {
-        setIsMapLoading(false);
-      });
 
     try {
       const response = await fetch("/api/travel-plan", {
@@ -128,12 +128,35 @@ export default function TravelForm() {
       }
 
       setRequestId(response.headers.get("x-request-id"));
-      setResult(payload as TravelResponse);
+      const itinerary = payload as TravelResponse;
+      setResult(itinerary);
+
+      const places = buildMapPlaces(itinerary, form.destination);
+      console.info("[map] Extracted places from itinerary", { places });
+
+      setIsMapLoading(true);
+      try {
+        const locations = await fetchCoordinates(places, form.destination);
+        const summaryDescription = itinerary.summary.slice(0, 140);
+        setMapLocations(
+          locations.map((location) => ({
+            ...location,
+            description:
+              location.name.toLowerCase() === form.destination.trim().toLowerCase()
+                ? summaryDescription
+                : location.description,
+          })),
+        );
+      } catch (mapErr) {
+        console.error("[map] Failed to load map locations", mapErr);
+        setMapError(mapErr instanceof Error ? mapErr.message : "Failed to load map locations.");
+      } finally {
+        setIsMapLoading(false);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error occurred");
     } finally {
       setIsLoading(false);
-      await geocodeTask;
     }
   }
 
@@ -256,13 +279,13 @@ export default function TravelForm() {
         {requestId && <p className="mt-2 text-xs text-slate-500">Request ID: {requestId}</p>}
       </form>
 
-      <section className="card min-h-[420px]" aria-live="polite">
+      <section className="card min-h-[420px] lg:h-[calc(100vh-120px)] lg:overflow-hidden" aria-live="polite">
         {!result ? (
           <div className="flex h-full items-center justify-center text-center text-slate-500">
             {isLoading ? "AI is crafting your itinerary..." : "Your generated itinerary will appear here."}
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 lg:h-full lg:overflow-y-auto lg:pr-2">
             <div>
               <h3 className="text-xl font-semibold">Trip Summary</h3>
               <p className="mt-2 text-sm text-slate-700">{result.summary}</p>
@@ -306,7 +329,9 @@ export default function TravelForm() {
 
             <div>
               <h4 className="text-lg font-semibold">Destination map</h4>
-              <p className="mt-1 text-sm text-slate-600">Map preview for {form.destination}</p>
+              <p className="mt-1 text-sm text-slate-600">
+                Map pins for places found in your plan ({mapLocations.length} shown)
+              </p>
               <div className="mt-3">
                 {isMapLoading && (
                   <div className="flex h-[320px] items-center justify-center rounded-xl border border-slate-200 text-slate-500 sm:h-[420px]">
@@ -316,13 +341,11 @@ export default function TravelForm() {
                 {!isMapLoading && mapError && (
                   <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{mapError}</p>
                 )}
-                {!isMapLoading && mapLocation && (
-                  <LocationMap
-                    location={{
-                      ...mapLocation,
-                      description: markerDescription,
-                    }}
-                  />
+                {!isMapLoading && mapLocations.length > 0 && <LocationMap locations={mapLocations} />}
+                {!isMapLoading && !mapError && mapLocations.length === 0 && (
+                  <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    No map pins were found for the suggested places. Check console logs for details.
+                  </p>
                 )}
               </div>
             </div>

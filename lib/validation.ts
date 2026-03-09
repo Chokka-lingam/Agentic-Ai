@@ -75,6 +75,7 @@ export const PlannerResponseSchema = z
 export const TravelResponseSchema = z
   .object({
     summary: z.string().min(20),
+    map_locations: z.array(z.string().trim().min(3)).min(3).max(12),
     daily_plan: z
       .array(
         z.object({
