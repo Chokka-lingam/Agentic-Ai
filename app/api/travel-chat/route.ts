@@ -6,7 +6,7 @@ import { TravelChatRequestSchema } from "@/lib/validation";
 import type { TravelChatRequest } from "@/lib/types";
 
 const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
-const apiKey = "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";
+const apiKey = process.env.OPENAI_API_KEY;
 
 const client = apiKey ? new OpenAI({ apiKey }) : null;
 
