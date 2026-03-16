@@ -7,6 +7,16 @@ const DateSchema = z.string().refine((value) => isIsoDateString(value), {
   message: "Invalid date format. Use YYYY-MM-DD.",
 });
 
+export const TravelChatMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  text: z.string().trim().min(1).max(4_000),
+});
+
+export const TravelChatRequestSchema = z.object({
+  message: z.string().trim().min(1).max(4_000),
+  history: z.array(TravelChatMessageSchema).max(20).optional(),
+});
+
 export const TravelRequestSchema = z
   .object({
     destination: z.string().trim().min(2).max(120),

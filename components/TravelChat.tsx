@@ -1,24 +1,91 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { parseTravelRequestFromChat } from "@/lib/chat-parser";
-import type { ApiErrorResponse, TravelRequest, TravelResponse } from "@/lib/types";
+import type { ReactNode } from "react";
+import type { ApiErrorResponse, TravelChatResponse } from "@/lib/types";
 
 type ChatMessage = {
   id: string;
   role: "assistant" | "user";
   text: string;
-  itinerary?: TravelResponse;
 };
 
 function createId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function getTripDaysCount(payload: TravelRequest): number {
-  const start = new Date(`${payload.startDate}T00:00:00.000Z`);
-  const end = new Date(`${payload.endDate}T00:00:00.000Z`);
-  return Math.floor((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+function renderFormattedText(text: string): ReactNode[] {
+  const lines = text.split(/\r?\n/);
+  const blocks: ReactNode[] = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const currentLine = lines[index].trim();
+
+    if (!currentLine) {
+      index += 1;
+      continue;
+    }
+
+    if (/^[-*]\s+/.test(currentLine)) {
+      const items: string[] = [];
+
+      while (index < lines.length) {
+        const line = lines[index].trim();
+        if (!/^[-*]\s+/.test(line)) break;
+        items.push(line.replace(/^[-*]\s+/, "").trim());
+        index += 1;
+      }
+
+      blocks.push(
+        <ul key={`ul-${index}`} className="list-disc space-y-1 pl-5">
+          {items.map((item, itemIndex) => (
+            <li key={`ul-item-${index}-${itemIndex}`}>{item}</li>
+          ))}
+        </ul>,
+      );
+      continue;
+    }
+
+    if (/^\d+\.\s+/.test(currentLine)) {
+      const items: string[] = [];
+
+      while (index < lines.length) {
+        const line = lines[index].trim();
+        if (!/^\d+\.\s+/.test(line)) break;
+        items.push(line.replace(/^\d+\.\s+/, "").trim());
+        index += 1;
+      }
+
+      blocks.push(
+        <ol key={`ol-${index}`} className="list-decimal space-y-1 pl-5">
+          {items.map((item, itemIndex) => (
+            <li key={`ol-item-${index}-${itemIndex}`}>{item}</li>
+          ))}
+        </ol>,
+      );
+      continue;
+    }
+
+    const paragraphLines: string[] = [];
+
+    while (index < lines.length) {
+      const line = lines[index].trim();
+      if (!line || /^[-*]\s+/.test(line) || /^\d+\.\s+/.test(line)) {
+        break;
+      }
+      paragraphLines.push(line);
+      index += 1;
+    }
+
+    blocks.push(
+      <p key={`p-${index}`} className="whitespace-pre-wrap">
+        {paragraphLines.join(" ")}
+      </p>,
+    );
+  }
+
+  return blocks;
 }
 
 export default function TravelChat() {
@@ -26,12 +93,12 @@ export default function TravelChat() {
     {
       id: createId(),
       role: "assistant",
-      text: "Tell me your travel goal and constraints. Example: Plan a 5-day Japan trip for 2 people on a mid budget with food and nightlife.",
+      text:
+        "Ask me anything about travel: destinations, budgets, transport, safety, visas, best time to visit, packing, or full trip ideas.",
     },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [requestId, setRequestId] = useState<string | null>(null);
 
   const canSend = useMemo(() => !isLoading && input.trim().length > 0, [isLoading, input]);
 
@@ -41,7 +108,6 @@ export default function TravelChat() {
     if (!message || isLoading) return;
 
     setInput("");
-    setRequestId(null);
 
     setMessages((current) => [
       ...current,
@@ -52,47 +118,42 @@ export default function TravelChat() {
       },
     ]);
 
-    const parsed = parseTravelRequestFromChat(message);
-    if (!parsed.data) {
-      setMessages((current) => [
-        ...current,
-        {
-          id: createId(),
-          role: "assistant",
-          text: parsed.error || "I could not understand that request. Please try again.",
-        },
-      ]);
-      return;
-    }
-
-    const travelRequest = parsed.data;
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/travel-plan", {
+      const history = [
+        ...messages.map((entry) => ({
+          role: entry.role,
+          text: entry.text,
+        })),
+        {
+          role: "user" as const,
+          text: message,
+        },
+      ];
+
+      const response = await fetch("/api/travel-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(travelRequest),
+        body: JSON.stringify({
+          message,
+          history,
+        }),
       });
 
-      const payload = (await response.json()) as TravelResponse | ApiErrorResponse;
+      const payload = (await response.json()) as TravelChatResponse | ApiErrorResponse;
       if (!response.ok) {
         const errorPayload = payload as ApiErrorResponse;
-        setRequestId(errorPayload.requestId || response.headers.get("x-request-id"));
         throw new Error(errorPayload.error || "Request failed");
       }
 
-      setRequestId(response.headers.get("x-request-id"));
-
-      const itinerary = payload as TravelResponse;
-      const days = getTripDaysCount(travelRequest);
+      const chatResponse = payload as TravelChatResponse;
       setMessages((current) => [
         ...current,
         {
           id: createId(),
           role: "assistant",
-          text: `I built a ${days}-day plan for ${travelRequest.destination}.`,
-          itinerary,
+          text: chatResponse.answer,
         },
       ]);
     } catch (error) {
@@ -118,49 +179,38 @@ export default function TravelChat() {
       <div className="flex h-[500px] flex-col sm:h-[560px]">
         <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
           {messages.map((message) => (
-            <article
+            <div
               key={message.id}
-              className={`max-w-[96%] rounded-2xl px-4 py-3 text-sm leading-relaxed sm:max-w-[88%] ${
-                message.role === "user"
-                  ? "ml-auto bg-sky-900 text-white"
-                  : "mr-auto bg-slate-100 text-slate-800"
-              }`}
+              className={`flex min-w-0 ${message.role === "user" ? "justify-end" : "justify-start"}`}
             >
-              <p>{message.text}</p>
-              {message.itinerary && (
-                <div className="mt-4 space-y-3 rounded-xl bg-white/90 p-3 text-slate-900">
-                  <p className="text-sm font-semibold">Trip Summary</p>
-                  <p className="text-sm">{message.itinerary.summary}</p>
-                  <p className="text-sm font-semibold">Day-by-day plan</p>
-                  <ul className="space-y-2 text-sm">
-                    {message.itinerary.daily_plan.map((day) => (
-                      <li key={`${message.id}-${day.day}`}>
-                        <span className="font-semibold">Day {day.day}:</span> {day.activities.join(", ")}
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="text-sm font-semibold">
-                    Total estimated budget: {message.itinerary.total_estimated_budget}
-                  </p>
-                </div>
-              )}
-            </article>
+              <article
+                className={`max-w-[85%] min-w-0 break-words rounded-2xl px-4 py-3 text-sm leading-relaxed sm:max-w-[75%] ${
+                  message.role === "user"
+                    ? "bg-sky-900 text-white"
+                    : "bg-slate-100 text-slate-800"
+                }`}
+              >
+                <div className="space-y-3">{renderFormattedText(message.text)}</div>
+              </article>
+            </div>
           ))}
 
           {isLoading && (
-            <article className="mr-auto max-w-[88%] rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
-              AI is crafting your itinerary...
-            </article>
+            <div className="flex min-w-0 justify-start">
+              <article className="max-w-[75%] min-w-0 break-words rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+                AI is thinking through your travel question...
+              </article>
+            </div>
           )}
         </div>
 
         <footer className="border-t border-slate-200 px-5 py-4">
-          <form className="flex items-center gap-3" onSubmit={onSubmit}>
+          <form className="flex min-w-0 items-center gap-3" onSubmit={onSubmit}>
             <input
-              className="input h-12 flex-1 rounded-xl text-sm"
+              className="input h-12 min-w-0 flex-1 rounded-xl text-sm"
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="Plan a 5-day trip to Japan under $2500..."
+              placeholder="Is May a good time for Bali? How much for 7 days in Japan?..."
               disabled={isLoading}
             />
             <button
@@ -172,7 +222,6 @@ export default function TravelChat() {
               <span className="text-base">&gt;</span>
             </button>
           </form>
-          {requestId && <p className="mt-2 text-xs text-slate-500">Request ID: {requestId}</p>}
         </footer>
       </div>
     </section>
