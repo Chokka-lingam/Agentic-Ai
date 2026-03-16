@@ -1,5 +1,19 @@
 export type TravelType = "solo" | "couple" | "family" | "friends";
 
+export type TravelChatMessage = {
+  role: "user" | "assistant";
+  text: string;
+};
+
+export type TravelChatRequest = {
+  message: string;
+  history?: TravelChatMessage[];
+};
+
+export type TravelChatResponse = {
+  answer: string;
+};
+
 export type TravelRequest = {
   destination: string;
   startDate: string;

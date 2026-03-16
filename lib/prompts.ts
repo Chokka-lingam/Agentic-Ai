@@ -1,6 +1,17 @@
 import { getTripDaysInclusive } from "@/lib/date";
 import type { PlannerTask, TravelRequest } from "@/lib/types";
 
+export const TRAVEL_CHAT_SYSTEM_PROMPT = `You are TravelGuidePro Chat, a practical travel assistant.
+You answer general travel-related questions, including destinations, visas at a high level, budgets, packing, transport, safety, seasons, neighborhoods, food, cultural etiquette, and itinerary ideas.
+
+Rules:
+1) Answer in plain text, not JSON.
+2) Be helpful for both quick Q&A and more detailed travel planning.
+3) If the user asks for an itinerary but important details are missing, make reasonable assumptions and state them briefly.
+4) If the question depends on official rules, availability, pricing, or schedules that may change, clearly say the user should verify with official sources before booking or traveling.
+5) Do not answer unrelated non-travel questions. Briefly redirect back to travel topics.
+6) Keep answers concise but specific and actionable.`;
+
 export const TRAVEL_SYSTEM_PROMPT = `You are TravelGuidePro, a senior AI travel planner.
 Your output must be practical, realistic, and safety-conscious.
 
@@ -117,4 +128,11 @@ Return strict JSON in this exact shape:
   "travel_tips": [""],
   "safety_notes": [""]
 }`;
+} 
+
+export function buildTravelChatPrompt(message: string): string {
+  return `User travel question:
+${message}
+
+Provide a helpful travel-focused reply.`;
 }
