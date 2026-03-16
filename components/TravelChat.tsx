@@ -31,7 +31,6 @@ export default function TravelChat() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [requestId, setRequestId] = useState<string | null>(null);
 
   const canSend = useMemo(() => !isLoading && input.trim().length > 0, [isLoading, input]);
 
@@ -41,7 +40,6 @@ export default function TravelChat() {
     if (!message || isLoading) return;
 
     setInput("");
-    setRequestId(null);
 
     setMessages((current) => [
       ...current,
@@ -78,11 +76,8 @@ export default function TravelChat() {
       const payload = (await response.json()) as TravelResponse | ApiErrorResponse;
       if (!response.ok) {
         const errorPayload = payload as ApiErrorResponse;
-        setRequestId(errorPayload.requestId || response.headers.get("x-request-id"));
         throw new Error(errorPayload.error || "Request failed");
       }
-
-      setRequestId(response.headers.get("x-request-id"));
 
       const itinerary = payload as TravelResponse;
       const days = getTripDaysCount(travelRequest);
@@ -172,7 +167,6 @@ export default function TravelChat() {
               <span className="text-base">&gt;</span>
             </button>
           </form>
-          {requestId && <p className="mt-2 text-xs text-slate-500">Request ID: {requestId}</p>}
         </footer>
       </div>
     </section>

@@ -3,21 +3,19 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockParse } = vi.hoisted(() => ({
-  mockParse: vi.fn(),
+const { mockCreate } = vi.hoisted(() => ({
+  mockCreate: vi.fn(),
 }));
 
 vi.mock("openai", () => {
   return {
     default: class MockOpenAI {
-      beta = {
-        chat: {
-          completions: {
-            parse: mockParse,
-          },
+      chat = {
+        completions: {
+          create: mockCreate,
         },
       };
-    },
+    }
   };
 });
 
@@ -27,7 +25,7 @@ describe("POST /api/travel-plan", () => {
 
   beforeEach(async () => {
     vi.resetModules();
-    mockParse.mockReset();
+    mockCreate.mockReset();
     originalCwd = process.cwd();
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "travel-plan-route-test-"));
     process.chdir(tempDir);
@@ -57,7 +55,7 @@ describe("POST /api/travel-plan", () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toBe("Invalid request payload.");
-    expect(mockParse).not.toHaveBeenCalled();
+    expect(mockCreate).not.toHaveBeenCalled();
   });
 
   it("returns 500 when OPENAI_API_KEY is missing", async () => {
@@ -76,12 +74,15 @@ describe("POST /api/travel-plan", () => {
     expect(body.error).toMatch(/missing OPENAI_API_KEY/i);
   });
 
-  it("persists itinerary and returns response metadata", async () => {
+  it("returns an itinerary and request header when planning and synthesis succeed", async () => {
     process.env.OPENAI_API_KEY = "test-key";
-    mockParse.mockResolvedValue({
-      choices: [{ message: { parsed: validPlan() } }],
-      usage: { prompt_tokens: 100, completion_tokens: 200, total_tokens: 300 },
-    });
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [{ message: { content: JSON.stringify(validPlanner()) } }],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ message: { content: JSON.stringify(validPlan()) } }],
+      });
     const { POST } = await import("@/app/api/travel-plan/route");
 
     const request = new Request("http://localhost/api/travel-plan", {
@@ -95,21 +96,35 @@ describe("POST /api/travel-plan", () => {
 
     expect(response.status).toBe(200);
     expect(body.summary).toBe("2-day sample itinerary");
-    expect(body.itinerary_id).toBeTypeOf("string");
-    expect(body.request_id).toBeTypeOf("string");
+    expect(body.map_locations).toEqual(validPlan().map_locations);
+    expect(response.headers.get("x-request-id")).toBeTypeOf("string");
+    expect(mockCreate).toHaveBeenCalledTimes(2);
 
-    const savedRaw = await fs.readFile(path.join(tempDir, "data", "itineraries.json"), "utf8");
-    const saved = JSON.parse(savedRaw) as Array<{ id: string }>;
-    expect(saved).toHaveLength(1);
-    expect(saved[0].id).toBe(body.itinerary_id);
+    expect(mockCreate).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        response_format: { type: "json_object" },
+        temperature: 0.2,
+      }),
+    );
+    expect(mockCreate).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        response_format: { type: "json_object" },
+        temperature: 0.3,
+      }),
+    );
   });
 
-  it("returns 500 when model output day count violates server date-span checks", async () => {
+  it("returns 502 when model output day count violates server date-span checks", async () => {
     process.env.OPENAI_API_KEY = "test-key";
-    mockParse.mockResolvedValue({
-      choices: [{ message: { parsed: { ...validPlan(), daily_plan: [validPlan().daily_plan[0]] } } }],
-      usage: { prompt_tokens: 100, completion_tokens: 200, total_tokens: 300 },
-    });
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [{ message: { content: JSON.stringify(validPlanner()) } }],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ message: { content: JSON.stringify({ ...validPlan(), daily_plan: [validPlan().daily_plan[0]] }) } }],
+      });
     const { POST } = await import("@/app/api/travel-plan/route");
 
     const request = new Request("http://localhost/api/travel-plan", {
@@ -121,8 +136,8 @@ describe("POST /api/travel-plan", () => {
     const response = await POST(request);
     const body = await response.json();
 
-    expect(response.status).toBe(500);
-    expect(body.error).toContain("Daily plan day count mismatch");
+    expect(response.status).toBe(502);
+    expect(body.error).toContain("AI response consistency check failed");
   });
 });
 
@@ -140,6 +155,11 @@ function validRequest() {
 function validPlan() {
   return {
     summary: "2-day sample itinerary",
+    map_locations: [
+      "Kiyomizu-dera, Kyoto, Japan",
+      "Gion, Kyoto, Japan",
+      "Arashiyama Bamboo Grove, Kyoto, Japan",
+    ],
     daily_plan: [
       {
         day: 1,
@@ -169,8 +189,23 @@ function validPlan() {
       misc: "$100",
     },
     total_estimated_budget: "$1260",
-    packing_list: ["Comfortable walking shoes"],
-    travel_tips: ["Book major attractions in advance."],
-    safety_notes: ["Keep emergency contact details accessible."],
+    packing_list: ["Comfortable walking shoes", "Portable umbrella", "Transit card holder"],
+    travel_tips: [
+      "Book major attractions in advance.",
+      "Start early for popular shrines.",
+      "Carry cash for smaller food stalls.",
+    ],
+    safety_notes: ["Keep emergency contact details accessible.", "Watch for bike traffic on narrow streets."],
+  };
+}
+
+function validPlanner() {
+  return {
+    tasks: [
+      { id: "task-1", type: "transport", priority: "high", status: "pending", notes: "Use ICOCA for transit." },
+      { id: "task-2", type: "stay", priority: "high", status: "pending", notes: "Stay near Gion or Kyoto Station." },
+      { id: "task-3", type: "activities", priority: "medium", status: "pending", notes: "Balance temples and food stops." },
+      { id: "task-4", type: "budget", priority: "medium", status: "pending", notes: "Keep daily spend under plan." },
+    ],
   };
 }

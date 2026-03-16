@@ -67,7 +67,6 @@ export default function TravelForm() {
   const [isMapLoading, setIsMapLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
-  const [requestId, setRequestId] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [mapLocations, setMapLocations] = useState<GeocodeLocation[]>([]);
 
@@ -103,7 +102,6 @@ export default function TravelForm() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setRequestId(null);
     setMapError(null);
     setMapLocations([]);
     setResult(null);
@@ -124,11 +122,9 @@ export default function TravelForm() {
       const payload = (await response.json()) as TravelResponse | ApiErrorResponse;
       if (!response.ok) {
         const errorPayload = payload as ApiErrorResponse;
-        setRequestId(errorPayload.requestId || response.headers.get("x-request-id"));
         throw new Error(errorPayload.error || "Request failed");
       }
 
-      setRequestId(response.headers.get("x-request-id"));
       const itinerary = payload as TravelResponse;
       setResult(itinerary);
 
@@ -277,7 +273,6 @@ export default function TravelForm() {
         </button>
 
         {error && <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-        {requestId && <p className="mt-2 text-xs text-slate-500">Request ID: {requestId}</p>}
       </form>
 
       <section className="card min-h-[420px] lg:h-[calc(100vh-120px)] lg:overflow-hidden" aria-live="polite">
