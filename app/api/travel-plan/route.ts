@@ -12,7 +12,10 @@ export async function POST(request: Request) {
   try {
     if (!client) {
       return NextResponse.json(
-        { error: "Server is missing OPENAI_API_KEY. Add it in your environment variables." },
+        {
+          error:
+            "Server is missing OPENAI_API_KEY. Add it in your environment variables.",
+        },
         { status: 500 },
       );
     }
@@ -22,7 +25,10 @@ export async function POST(request: Request) {
 
     if (!parsedInput.success) {
       return NextResponse.json(
-        { error: "Invalid request payload.", issues: parsedInput.error.flatten() },
+        {
+          error: "Invalid request payload.",
+          issues: parsedInput.error.flatten(),
+        },
         { status: 400 },
       );
     }
@@ -50,14 +56,21 @@ export async function POST(request: Request) {
 
     if (!parsedOutput.success) {
       return NextResponse.json(
-        { error: "AI response format validation failed.", issues: parsedOutput.error.flatten() },
+        {
+          error: "AI response format validation failed.",
+          issues: parsedOutput.error.flatten(),
+        },
         { status: 502 },
       );
     }
 
     return NextResponse.json(parsedOutput.data);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown server error";
-    return NextResponse.json({ error: `Failed to generate itinerary: ${message}` }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : "Unknown server error";
+    return NextResponse.json(
+      { error: `Failed to generate itinerary: ${message}` },
+      { status: 500 },
+    );
   }
 }

@@ -36,3 +36,15 @@ export type TravelResponse = {
   travel_tips: string[];
   safety_notes: string[];
 };
+
+export type LoginForm = {
+  email: string;
+  password: string;
+};
+
+export type SignupForm = {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+};

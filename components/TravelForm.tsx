@@ -1,9 +1,15 @@
-"use client";
-
 import { FormEvent, useMemo, useState } from "react";
 import type { TravelRequest, TravelResponse, TravelType } from "@/lib/types";
 
-const interestOptions = ["adventure", "food", "history", "nightlife", "nature", "culture", "shopping"];
+const interestOptions = [
+  "adventure",
+  "food",
+  "history",
+  "nightlife",
+  "nature",
+  "culture",
+  "shopping",
+];
 
 const initialForm: TravelRequest = {
   destination: "",
@@ -18,14 +24,17 @@ type FormErrors = Partial<Record<keyof TravelRequest, string>>;
 
 function validate(form: TravelRequest): FormErrors {
   const errors: FormErrors = {};
-  if (form.destination.trim().length < 2) errors.destination = "Destination must be at least 2 characters.";
+  if (form.destination.trim().length < 2)
+    errors.destination = "Destination must be at least 2 characters.";
   if (!form.startDate) errors.startDate = "Start date is required.";
   if (!form.endDate) errors.endDate = "End date is required.";
   if (form.startDate && form.endDate && form.endDate < form.startDate) {
     errors.endDate = "End date must be after start date.";
   }
-  if (form.budgetRange.trim().length < 2) errors.budgetRange = "Budget range is required.";
-  if (form.interests.length === 0) errors.interests = "Select at least one interest.";
+  if (form.budgetRange.trim().length < 2)
+    errors.budgetRange = "Budget range is required.";
+  if (form.interests.length === 0)
+    errors.interests = "Select at least one interest.";
   return errors;
 }
 
@@ -36,6 +45,7 @@ export default function TravelForm() {
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
 
+  //To prevent unnecessary re-renders of components relying on canSubmit
   const canSubmit = useMemo(() => !isLoading, [isLoading]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -54,14 +64,20 @@ export default function TravelForm() {
         body: JSON.stringify(form),
       });
 
-      const payload = (await response.json()) as TravelResponse | { error?: string };
+      const payload = (await response.json()) as
+        | TravelResponse
+        | { error?: string };
       if (!response.ok) {
-        throw new Error((payload as { error?: string }).error || "Request failed");
+        throw new Error(
+          (payload as { error?: string }).error || "Request failed",
+        );
       }
 
       setResult(payload as TravelResponse);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unexpected error occurred");
+      setError(
+        err instanceof Error ? err.message : "Unexpected error occurred",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -81,57 +97,85 @@ export default function TravelForm() {
       <form className="card h-fit" onSubmit={onSubmit}>
         <h2 className="mb-4 text-lg font-semibold">Plan your trip</h2>
 
-        <label className="label" htmlFor="destination">Destination</label>
+        <label className="label" htmlFor="destination">
+          Destination
+        </label>
         <input
           id="destination"
           className="input mb-1"
           value={form.destination}
-          onChange={(e) => setForm((f) => ({ ...f, destination: e.target.value }))}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, destination: e.target.value }))
+          }
           placeholder="e.g. Tokyo, Japan"
         />
-        {errors.destination && <p className="mb-3 text-xs text-red-600">{errors.destination}</p>}
+        {errors.destination && (
+          <p className="mb-3 text-xs text-red-600">{errors.destination}</p>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label" htmlFor="startDate">Start date</label>
+            <label className="label" htmlFor="startDate">
+              Start date
+            </label>
             <input
               id="startDate"
               type="date"
               className="input mb-1"
               value={form.startDate}
-              onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, startDate: e.target.value }))
+              }
             />
-            {errors.startDate && <p className="text-xs text-red-600">{errors.startDate}</p>}
+            {errors.startDate && (
+              <p className="text-xs text-red-600">{errors.startDate}</p>
+            )}
           </div>
           <div>
-            <label className="label" htmlFor="endDate">End date</label>
+            <label className="label" htmlFor="endDate">
+              End date
+            </label>
             <input
               id="endDate"
               type="date"
               className="input mb-1"
               value={form.endDate}
-              onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, endDate: e.target.value }))
+              }
             />
-            {errors.endDate && <p className="text-xs text-red-600">{errors.endDate}</p>}
+            {errors.endDate && (
+              <p className="text-xs text-red-600">{errors.endDate}</p>
+            )}
           </div>
         </div>
 
-        <label className="label mt-3" htmlFor="budgetRange">Budget range</label>
+        <label className="label mt-3" htmlFor="budgetRange">
+          Budget range
+        </label>
         <input
           id="budgetRange"
           className="input mb-1"
           value={form.budgetRange}
-          onChange={(e) => setForm((f) => ({ ...f, budgetRange: e.target.value }))}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, budgetRange: e.target.value }))
+          }
           placeholder="e.g. $1500 - $2500"
         />
-        {errors.budgetRange && <p className="mb-3 text-xs text-red-600">{errors.budgetRange}</p>}
+        {errors.budgetRange && (
+          <p className="mb-3 text-xs text-red-600">{errors.budgetRange}</p>
+        )}
 
-        <label className="label mt-3" htmlFor="travelType">Travel type</label>
+        <label className="label mt-3" htmlFor="travelType">
+          Travel type
+        </label>
         <select
           id="travelType"
           className="input"
           value={form.travelType}
-          onChange={(e) => setForm((f) => ({ ...f, travelType: e.target.value as TravelType }))}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, travelType: e.target.value as TravelType }))
+          }
         >
           <option value="solo">Solo</option>
           <option value="couple">Couple</option>
@@ -159,7 +203,9 @@ export default function TravelForm() {
             );
           })}
         </div>
-        {errors.interests && <p className="mb-3 text-xs text-red-600">{errors.interests}</p>}
+        {errors.interests && (
+          <p className="mb-3 text-xs text-red-600">{errors.interests}</p>
+        )}
 
         <button
           disabled={!canSubmit}
@@ -169,13 +215,19 @@ export default function TravelForm() {
           {isLoading ? "Generating itinerary..." : "Generate travel plan"}
         </button>
 
-        {error && <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && (
+          <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </p>
+        )}
       </form>
 
       <section className="card min-h-[420px]">
         {!result ? (
           <div className="flex h-full items-center justify-center text-center text-slate-500">
-            {isLoading ? "AI is crafting your itinerary..." : "Your generated itinerary will appear here."}
+            {isLoading
+              ? "AI is crafting your itinerary..."
+              : "Your generated itinerary will appear here."}
           </div>
         ) : (
           <div className="space-y-6">
@@ -188,21 +240,43 @@ export default function TravelForm() {
               <h4 className="text-lg font-semibold">Day-by-day plan</h4>
               <div className="mt-3 space-y-3">
                 {result.daily_plan.map((day) => (
-                  <div key={`${day.day}-${day.date}`} className="rounded-xl border border-slate-200 p-4">
-                    <p className="font-semibold">Day {day.day} • {day.date}</p>
-                    <p className="mt-2 text-sm"><strong>Activities:</strong> {day.activities.join(", ")}</p>
-                    <p className="mt-1 text-sm"><strong>Food:</strong> {day.food.join(", ")}</p>
-                    <p className="mt-1 text-sm"><strong>Transport:</strong> {day.transport}</p>
-                    <p className="mt-1 text-sm"><strong>Estimated cost:</strong> {day.estimated_cost}</p>
+                  <div
+                    key={`${day.day}-${day.date}`}
+                    className="rounded-xl border border-slate-200 p-4"
+                  >
+                    <p className="font-semibold">
+                      Day {day.day} • {day.date}
+                    </p>
+                    <p className="mt-2 text-sm">
+                      <strong>Activities:</strong> {day.activities.join(", ")}
+                    </p>
+                    <p className="mt-1 text-sm">
+                      <strong>Food:</strong> {day.food.join(", ")}
+                    </p>
+                    <p className="mt-1 text-sm">
+                      <strong>Transport:</strong> {day.transport}
+                    </p>
+                    <p className="mt-1 text-sm">
+                      <strong>Estimated cost:</strong> {day.estimated_cost}
+                    </p>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <InfoList title="Hotel recommendations" items={result.hotel_recommendations} />
-              <InfoList title="Local food spots" items={result.local_food_spots} />
-              <InfoList title="Transportation overview" items={result.transportation_overview} />
+              <InfoList
+                title="Hotel recommendations"
+                items={result.hotel_recommendations}
+              />
+              <InfoList
+                title="Local food spots"
+                items={result.local_food_spots}
+              />
+              <InfoList
+                title="Transportation overview"
+                items={result.transportation_overview}
+              />
               <InfoList title="Packing list" items={result.packing_list} />
               <InfoList title="Travel tips" items={result.travel_tips} />
               <InfoList title="Safety notes" items={result.safety_notes} />
@@ -217,7 +291,9 @@ export default function TravelForm() {
                 <li>Activities: {result.cost_breakdown.activities}</li>
                 <li>Misc: {result.cost_breakdown.misc}</li>
               </ul>
-              <p className="mt-2 font-semibold">Total Estimated Budget: {result.total_estimated_budget}</p>
+              <p className="mt-2 font-semibold">
+                Total Estimated Budget: {result.total_estimated_budget}
+              </p>
             </div>
           </div>
         )}
