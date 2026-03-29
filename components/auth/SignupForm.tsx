@@ -32,7 +32,7 @@ export function SignupForm() {
 
       if (data.session) {
         // Force a full page reload to ensure server components see the updated session
-        window.location.href = "/";
+        window.location.href = "/dashboard";
         return;
       }
 

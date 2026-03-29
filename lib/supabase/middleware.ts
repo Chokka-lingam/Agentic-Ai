@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { PROTECTED_ROUTES, isProtectedRoute } from "@/lib/auth";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
 const AUTH_PAGES = new Set(["/login", "/signup"]);
-const PROTECTED_PREFIXES = ["/dashboard"];
 
 export async function updateSession(request: NextRequest) {
   const { url, anonKey, isConfigured } = getSupabaseEnv();
@@ -46,19 +46,19 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const isProtectedRoute = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  const routeRequiresAuth = isProtectedRoute(pathname);
   const isAuthPage = AUTH_PAGES.has(pathname);
 
-  if (!user && (pathname === "/" || isProtectedRoute)) {
+  if (!user && routeRequiresAuth) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
     redirectUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (user && (pathname === "/" || isAuthPage)) {
+  if (user && isAuthPage) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/dashboard";
+    redirectUrl.pathname = PROTECTED_ROUTES[0];
     redirectUrl.searchParams.delete("next");
     return NextResponse.redirect(redirectUrl);
   }
