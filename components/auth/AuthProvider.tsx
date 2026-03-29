@@ -80,8 +80,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+    // Force a full page reload to ensure server components see the updated session
+    window.location.href = "/login";
   }
 
   return (
