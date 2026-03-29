@@ -5,5 +5,5 @@ export async function middleware(request: import("next/server").NextRequest) {
 }
 
 export const config = {
-  matcher: ["/login", "/signup", "/dashboard/:path*", "/travel-form/:path*", "/travel-agent/:path*", "/itinerary/:path*", "/chat/:path*"],
+  matcher: ["/login", "/signup", "/dashboard/:path*", "/travel-form/:path*", "/travel-agent/:path*", "/itinerary/:path*", "/chat/:path*", "/community/:path*", "/profile/:path*"],
 };

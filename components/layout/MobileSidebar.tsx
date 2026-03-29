@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BotMessageSquare, FileText, X } from "lucide-react";
+import { BotMessageSquare, FileText, MessagesSquare, X } from "lucide-react";
 
 type MobileSidebarProps = {
   isOpen: boolean;
@@ -12,13 +12,18 @@ type MobileSidebarProps = {
 const navigationItems = [
   {
     href: "/travel-form",
-    label: "Create Itenary",
+    label: "Travel Form",
     icon: FileText,
   },
   {
     href: "/travel-agent",
-    label: "Travel Chat Agent",
+    label: "Travel Agent",
     icon: BotMessageSquare,
+  },
+  {
+    href: "/community",
+    label: "Community",
+    icon: MessagesSquare,
   },
 ];
 

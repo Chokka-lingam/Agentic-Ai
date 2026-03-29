@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { AppTopbar } from "@/components/layout/AppTopbar";
+import { getProfileSummaryById } from "@/lib/profile";
 import { SITE_DESCRIPTION, SITE_NAME, getSiteUrl } from "@/lib/site";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -10,9 +11,9 @@ export const metadata: Metadata = {
 
 export default async function PublicHomePage() {
   const supabase = await createSupabaseServerClient();
-  const userEmail = supabase
-    ? (await supabase.auth.getUser()).data.user?.email ?? null
-    : null;
+  const user = supabase ? (await supabase.auth.getUser()).data.user ?? null : null;
+  const userEmail = user?.email ?? null;
+  const profile = supabase && user ? await getProfileSummaryById(supabase, user.id) : null;
   const siteUrl = getSiteUrl();
   const structuredData = {
     "@context": "https://schema.org",
@@ -35,7 +36,7 @@ export default async function PublicHomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <AppTopbar showMenuButton={false} userEmail={userEmail} />
+      <AppTopbar showMenuButton={false} userEmail={userEmail} profile={profile} />
       <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         <DashboardOverview userEmail={userEmail} />
       </main>

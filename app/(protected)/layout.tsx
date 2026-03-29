@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
+import { getProfileSummaryById } from "@/lib/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
@@ -14,7 +15,9 @@ export default async function ProtectedLayout({ children }: { children: React.Re
       redirect("/login");
     }
 
-    return <AppShell userEmail={user.email}>{children}</AppShell>;
+    const profile = await getProfileSummaryById(supabase, user.id);
+
+    return <AppShell userEmail={user.email} profile={profile}>{children}</AppShell>;
   }
 
   return <AppShell>{children}</AppShell>;
