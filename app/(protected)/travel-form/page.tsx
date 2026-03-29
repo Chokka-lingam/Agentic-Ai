@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import TravelForm from "@/components/TravelForm";
 
 export const metadata: Metadata = {
-  title: "Create Itenary | AI Travel Guide Agent",
+  title: "Create Itenary | Tripnova",
 };
 
 export default function TravelFormPage() {

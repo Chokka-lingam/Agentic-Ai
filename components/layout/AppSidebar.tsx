@@ -36,7 +36,7 @@ export function AppSidebar({ isOpen, onToggle, onNavigate }: AppSidebarProps) {
         {isOpen ? (
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-600">Workspace</p>
-            <p className="mt-2 text-lg font-semibold text-slate-900">Travel AI</p>
+            <p className="mt-2 text-lg font-semibold text-slate-900">Tripnova</p>
           </div>
         ) : null}
 
