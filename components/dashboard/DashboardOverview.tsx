@@ -1,5 +1,7 @@
-import Link from "next/link";
+"use client";
+
 import { BotMessageSquare, Compass, FileText, Sparkles } from "lucide-react";
+import { useProtectedNavigation } from "@/hooks/useProtectedNavigation";
 
 type DashboardOverviewProps = {
   userEmail?: string | null;
@@ -7,13 +9,13 @@ type DashboardOverviewProps = {
 
 const quickActions = [
   {
-    href: "/travel-form",
-    label: "Open Travel Iternary",
+    href: "/itinerary",
+    label: "Open Travel Itinerary",
     description: "Generate structured itineraries with dates, budget, hotels, food, and map pins.",
     icon: FileText,
   },
   {
-    href: "/travel-agent",
+    href: "/chat",
     label: "Open Travel Chat Agent",
     description: "Chat with the AI assistant for destination ideas, timing, transport, and budgeting help.",
     icon: BotMessageSquare,
@@ -27,6 +29,8 @@ const highlights = [
 ];
 
 export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
+  const { notice, clearNotice, handleProtectedRoute } = useProtectedNavigation();
+
   return (
     <div className="space-y-6">
       <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-card">
@@ -44,19 +48,32 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
               {userEmail ? ` Your current session is signed in as ${userEmail}.` : ""}
             </p>
 
+            {notice ? (
+              <div
+                className="mt-4 inline-flex items-center rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800"
+                role="status"
+              >
+                {notice}
+              </div>
+            ) : null}
+
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/travel-form"
+              <button
+                type="button"
+                onClick={() => void handleProtectedRoute("/travel-form")}
+                onMouseDown={clearNotice}
                 className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
               >
                 Start planning
-              </Link>
-              <Link
-                href="/travel-agent"
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleProtectedRoute("/travel-agent")}
+                onMouseDown={clearNotice}
                 className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
               >
                 Ask the travel chat agent
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -84,9 +101,11 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
 
       <section className="grid gap-4 lg:grid-cols-2">
         {quickActions.map(({ href, label, description, icon: Icon }) => (
-          <Link
+          <button
             key={href}
-            href={href}
+            type="button"
+            onClick={() => void handleProtectedRoute(href)}
+            onMouseDown={clearNotice}
             className="group rounded-[24px] border border-slate-200 bg-white p-6 shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-xl"
           >
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-700 transition-colors group-hover:bg-sky-100">
@@ -94,7 +113,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
             </div>
             <h2 className="mt-5 text-xl font-semibold tracking-tight text-slate-950">{label}</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
-          </Link>
+          </button>
         ))}
       </section>
     </div>

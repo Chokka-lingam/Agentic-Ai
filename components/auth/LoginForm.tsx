@@ -19,7 +19,7 @@ export function LoginForm() {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const next = searchParams.get("next") || "/";
+      const next = searchParams.get("next") || "/dashboard";
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
