@@ -8,6 +8,8 @@ export const PROTECTED_ROUTES = [
   "/travel-agent",
   "/itinerary",
   "/chat",
+  "/community",
+  "/profile",
 ] as const;
 
 export function isProtectedRoute(pathname: string): boolean {

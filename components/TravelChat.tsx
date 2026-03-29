@@ -11,7 +11,11 @@ type ChatMessage = {
 };
 
 function createId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return `chat-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function renderFormattedText(text: string): ReactNode[] {
@@ -91,7 +95,7 @@ function renderFormattedText(text: string): ReactNode[] {
 export default function TravelChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: createId(),
+      id: "assistant-welcome",
       role: "assistant",
       text:
         "Ask me anything about travel: destinations, budgets, transport, safety, visas, best time to visit, packing, or full trip ideas.",

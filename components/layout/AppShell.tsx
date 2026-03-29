@@ -4,13 +4,15 @@ import { useEffect, useState, type ReactNode } from "react";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { AppTopbar } from "@/components/layout/AppTopbar";
 import { MobileSidebar } from "@/components/layout/MobileSidebar";
+import type { ProfileSummary } from "@/lib/types";
 
 type AppShellProps = {
   children: ReactNode;
   userEmail?: string | null;
+  profile?: ProfileSummary | null;
 };
 
-export function AppShell({ children, userEmail }: AppShellProps) {
+export function AppShell({ children, userEmail, profile }: AppShellProps) {
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -37,7 +39,7 @@ export function AppShell({ children, userEmail }: AppShellProps) {
       <MobileSidebar isOpen={isMobileSidebarOpen} onClose={() => setIsMobileSidebarOpen(false)} />
 
       <div className={`min-h-screen transition-all duration-300 ${sidebarOffset}`}>
-        <AppTopbar onMenuClick={() => setIsMobileSidebarOpen(true)} userEmail={userEmail} />
+        <AppTopbar onMenuClick={() => setIsMobileSidebarOpen(true)} userEmail={userEmail} profile={profile} />
         <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
       </div>
     </div>

@@ -1,5 +1,27 @@
 export type TravelType = "solo" | "couple" | "family" | "friends";
 
+export type Profile = {
+  id: string;
+  email: string;
+  username: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  created_at: string;
+};
+
+export type ProfileSummary = Pick<Profile, "id" | "email" | "username" | "full_name" | "avatar_url">;
+
+export type ProfileFormValues = Pick<Profile, "username" | "full_name" | "avatar_url" | "bio">;
+
+export type CommunityMessage = {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  profile: Pick<Profile, "id" | "username" | "full_name" | "avatar_url"> | null;
+};
+
 export type TravelChatMessage = {
   role: "user" | "assistant";
   text: string;

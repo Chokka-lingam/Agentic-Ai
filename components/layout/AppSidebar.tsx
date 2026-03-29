@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BotMessageSquare, FileText, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { BotMessageSquare, FileText, MessagesSquare, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 type AppSidebarProps = {
   isOpen: boolean;
@@ -13,13 +13,18 @@ type AppSidebarProps = {
 const navigationItems = [
   {
     href: "/travel-form",
-    label: "Create Itenary",
+    label: "Travel Form",
     icon: FileText,
   },
   {
     href: "/travel-agent",
-    label: "Chat Agent",
+    label: "Travel Agent",
     icon: BotMessageSquare,
+  },
+  {
+    href: "/community",
+    label: "Community",
+    icon: MessagesSquare,
   },
 ];
 
