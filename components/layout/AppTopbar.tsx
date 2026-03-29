@@ -39,12 +39,20 @@ export function AppTopbar({ onMenuClick, showMenuButton = true, userEmail }: App
         {userEmail ? (
           <LogoutButton />
         ) : (
-          <Link
-            href="/login"
-            className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition-all hover:border-slate-400 hover:text-slate-950"
-          >
-            Login
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/login"
+              className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition-all hover:border-slate-400 hover:text-slate-950"
+            >
+              Login
+            </Link>
+            <Link
+              href="/signup"
+              className="inline-flex h-11 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-medium text-white transition-all hover:bg-slate-800"
+            >
+              Sign up
+            </Link>
+          </div>
         )}
       </div>
     </header>
