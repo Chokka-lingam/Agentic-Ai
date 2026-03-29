@@ -1,5 +1,6 @@
-import type { Session, User } from "@supabase/supabase-js";
+﻿import type { Session, User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSupabaseEnv } from "@/lib/supabase/env";
 
 export const PROTECTED_ROUTES = [
   "/dashboard",
@@ -16,6 +17,10 @@ export function isProtectedRoute(pathname: string): boolean {
 export function buildLoginRedirectPath(nextRoute: string): string {
   const params = new URLSearchParams({ next: nextRoute });
   return `/login?${params.toString()}`;
+}
+
+export function isSupabaseAuthConfigured(): boolean {
+  return getSupabaseEnv().isConfigured;
 }
 
 export async function getCurrentSession(): Promise<Session | null> {

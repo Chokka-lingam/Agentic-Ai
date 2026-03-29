@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { buildLoginRedirectPath, getCurrentSession } from "@/lib/auth";
+import { buildLoginRedirectPath, getCurrentSession, isSupabaseAuthConfigured } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
 
 const LOGIN_NOTICE = "Please login to continue";
@@ -22,6 +22,12 @@ export function useProtectedNavigation() {
   }, []);
 
   async function handleProtectedRoute(route: string) {
+    if (!isSupabaseAuthConfigured()) {
+      setNotice(null);
+      router.push(route);
+      return;
+    }
+
     const activeSession = session ?? (isLoading ? await getCurrentSession() : null);
     const activeUser = user ?? activeSession?.user ?? null;
 
