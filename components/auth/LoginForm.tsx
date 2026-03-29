@@ -33,8 +33,8 @@ export function LoginForm() {
         return;
       }
 
-      router.push(next);
-      router.refresh();
+      // Force a full page reload to ensure server components see the updated session
+      window.location.href = next;
     } catch (authError) {
       setError(authError instanceof Error ? authError.message : "Unable to sign in.");
       setIsLoading(false);

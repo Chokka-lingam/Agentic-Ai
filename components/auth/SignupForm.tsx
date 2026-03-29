@@ -33,8 +33,8 @@ export function SignupForm() {
       }
 
       if (data.session) {
-        router.push("/dashboard");
-        router.refresh();
+        // Force a full page reload to ensure server components see the updated session
+        window.location.href = "/dashboard";
         return;
       }
 
