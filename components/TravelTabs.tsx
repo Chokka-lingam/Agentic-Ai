@@ -21,7 +21,7 @@ export default function TravelTabs() {
               : "text-slate-700 hover:bg-slate-100"
           }`}
         >
-          Travel Form
+          Create Itenary
         </button>
         <button
           type="button"
