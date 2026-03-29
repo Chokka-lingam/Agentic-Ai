@@ -6,7 +6,7 @@ import { SignupForm } from "@/components/auth/SignupForm";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Signup | AI Travel Guide Agent",
+  title: "Signup | Tripnova",
 };
 
 export default async function SignupPage() {

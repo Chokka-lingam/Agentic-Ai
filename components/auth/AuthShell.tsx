@@ -18,7 +18,7 @@ export function AuthShell({
         <section className="grid w-full overflow-hidden rounded-[2rem] border border-white/70 bg-white/85 shadow-2xl shadow-slate-300/40 backdrop-blur lg:grid-cols-[1.05fr,0.95fr]">
           <div className="hidden bg-slate-950 p-10 text-slate-100 lg:flex lg:flex-col lg:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.35em] text-orange-300">AI Travel Guide</p>
+              <p className="text-sm uppercase tracking-[0.35em] text-orange-300">TripNova AI Travel Guide</p>
               <h1 className="mt-6 font-serif text-4xl leading-tight">
                 Plan smarter trips with a private travel workspace.
               </h1>
@@ -39,7 +39,7 @@ export function AuthShell({
 
           <div className="p-6 sm:p-10">
             <Link href="/" className="text-sm font-medium text-slate-500 transition hover:text-slate-900">
-              AI Travel Guide Agent
+              Tripnova
             </Link>
             <div className="mt-8 max-w-md">
               <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{title}</h2>

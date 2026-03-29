@@ -6,7 +6,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Login | AI Travel Guide Agent",
+  title: "Login | Tripnova",
 };
 
 export default async function LoginPage() {

@@ -3,7 +3,7 @@ import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Dashboard | AI Travel Guide Agent",
+  title: "Dashboard | Tripnova",
 };
 
 export default async function DashboardPage() {

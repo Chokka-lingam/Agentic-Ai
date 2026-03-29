@@ -28,7 +28,7 @@ export function AppTopbar({ onMenuClick, showMenuButton = true, userEmail }: App
 
           <div className="min-w-0">
             <Link href="/" className="block truncate text-lg font-semibold tracking-tight text-slate-950">
-              AI Travel Guide Agent
+              Tripnova
             </Link>
             <p className="truncate text-sm text-slate-500">
               {userEmail ? `Signed in as ${userEmail}` : "Smart planning for trips, itineraries, and travel support"}

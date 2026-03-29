@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import TravelChat from "@/components/TravelChat";
 
 export const metadata: Metadata = {
-  title: "Travel Chat Agent | AI Travel Guide Agent",
+  title: "Travel Chat Agent | Tripnova AI",
 };
 
 export default function TravelAgentPage() {
