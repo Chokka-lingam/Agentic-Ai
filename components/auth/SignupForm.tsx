@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -11,7 +10,6 @@ export function SignupForm() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,7 +32,7 @@ export function SignupForm() {
 
       if (data.session) {
         // Force a full page reload to ensure server components see the updated session
-        window.location.href = "/dashboard";
+        window.location.href = "/";
         return;
       }
 

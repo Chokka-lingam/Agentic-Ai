@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -10,7 +10,6 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -20,7 +19,7 @@ export function LoginForm() {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const next = searchParams.get("next") || "/dashboard";
+      const next = searchParams.get("next") || "/";
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,

@@ -8,6 +8,10 @@
   color-scheme: light;
 }
 
+html {
+  @apply scroll-smooth;
+}
+
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }
@@ -22,4 +26,8 @@ body {
 
 .card {
   @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-card;
+}
+
+::selection {
+  @apply bg-sky-100 text-slate-950;
 }
