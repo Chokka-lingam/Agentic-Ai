@@ -10,6 +10,14 @@ type ChatMessage = {
   text: string;
 };
 
+function normalizeChatText(text: string): string {
+  return text
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/__(.*?)__/g, "$1")
+    .trim();
+}
+
 function createId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -19,7 +27,7 @@ function createId(): string {
 }
 
 function renderFormattedText(text: string): ReactNode[] {
-  const lines = text.split(/\r?\n/);
+  const lines = normalizeChatText(text).split(/\r?\n/);
   const blocks: ReactNode[] = [];
   let index = 0;
 
