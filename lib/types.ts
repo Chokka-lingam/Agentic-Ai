@@ -19,6 +19,7 @@ export type CommunityMessage = {
   user_id: string;
   content: string;
   created_at: string;
+  channel_slug: string;
   profile: Pick<Profile, "id" | "username" | "full_name" | "avatar_url"> | null;
 };
 
