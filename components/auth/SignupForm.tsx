@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { isUsernameAvailable, normalizeUsername, validateUsername } from "@/lib/profile";
+import { getSiteUrl } from "@/lib/site";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function SignupForm() {
@@ -42,8 +43,7 @@ export function SignupForm() {
         email,
         password,
         options: {
-          emailRedirectTo:
-            typeof window !== "undefined" ? `${window.location.origin}/login` : undefined,
+          emailRedirectTo: `${getSiteUrl()}/login`,
           data: {
             username: normalizedUsername,
           },
