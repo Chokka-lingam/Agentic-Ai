@@ -18,8 +18,11 @@ create table if not exists public.messages (
   created_at timestamptz not null default timezone('utc'::text, now())
 );
 
+alter table public.messages add column if not exists channel_slug text not null default 'general';
+
 create index if not exists messages_created_at_idx on public.messages (created_at desc);
 create index if not exists messages_user_id_idx on public.messages (user_id);
+create index if not exists messages_channel_slug_idx on public.messages (channel_slug, created_at desc);
 
 create or replace function public.generate_profile_username(user_email text, user_id uuid)
 returns text
@@ -79,6 +82,20 @@ begin
     alter table public.messages
       add constraint messages_content_length
       check (char_length(trim(content)) between 1 and 1000);
+  end if;
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'messages_channel_slug_allowed'
+  ) then
+    alter table public.messages
+      add constraint messages_channel_slug_allowed
+      check (channel_slug in ('general', 'destinations', 'food', 'budget'));
   end if;
 end
 $$;

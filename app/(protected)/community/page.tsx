@@ -42,7 +42,7 @@ export default async function CommunityPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-600">Community</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Global traveler chat</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-          Meet other travelers, ask for destination advice, and exchange live recommendations in one shared room.
+          Meet other travelers, hop between topic-based channels, and keep destination advice organized in separate conversations.
         </p>
       </section>
 
